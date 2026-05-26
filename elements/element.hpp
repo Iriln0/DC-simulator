@@ -1,0 +1,36 @@
+#pragma once
+#include <string>
+#include <vector>
+
+enum class ElementType{
+    Resistor,
+    Capacitor,
+    Inductor,
+    VoltageSource,
+    CurrentSource,
+    Diode,
+    BJT,
+    MOSFET
+};
+
+class Element{
+public:
+    virtual ~Element() = default;
+
+    const std::string& getName() const {
+        return _name;
+    }
+
+    const std::vector<std::string>& getNodes() const {
+        return _nodes;
+    }
+
+    size_t getTerminalsCount() const {
+        return _nodes.size();
+    }
+
+    virtual ElementType getType() const = 0;
+protected:
+    std::string _name;
+    std::vector<std::string> _nodes;
+};

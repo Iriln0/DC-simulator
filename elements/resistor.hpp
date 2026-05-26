@@ -1,15 +1,16 @@
 #pragma once
 #include <string>
 
-class Resistor{
+class Resistor : public Element{
 public:
-    Resistor(std::string n, std::string n1, std::string n2, std::string v):
-                name(n), node1(n1), node2(n2), value(v) {}
+    Resistor(std::string n, std::string n1, std::string n2, double v):
+                _name(n), _nodes({n1, n2}), _value(v) {}
     ~Resistor() = default;
 
+    ElementType getType() const override {
+        return ElementType::Resistor;
+    }
+
 private:
-    std::string name;
-    std::string node1;
-    std::string node2;
-    std::string value;
+    double _value;
 };

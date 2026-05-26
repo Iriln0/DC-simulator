@@ -1,15 +1,16 @@
 #pragma once
 #include <string>
 
-class Inductor{
+class Inductor : public Element{
 public:
-    Inductor(std::string n, std::string n1, std::string n2, std::string v):
-                name(n), node1(n1), node2(n2), value(v) {}
+    Inductor(std::string n, std::string n1, std::string n2, double v):
+                _name(n), _nodes({n1, n2}), _value(v) {}
     ~Inductor() = default;
 
+    ElementType getType() const override {
+        return ElementType::Inductor;
+    }
+
 private:
-    std::string name;
-    std::string node1;
-    std::string node2;
-    std::string value;
+    double _value;
 };

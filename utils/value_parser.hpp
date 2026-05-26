@@ -4,16 +4,7 @@
 #include <iostream>
 #include <string>
 
-inline bool equals_ignore_case(const std::string& a, const std::string& b) {
-    if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) {
-        if (std::tolower(static_cast<unsigned char>(a[i])) !=
-            std::tolower(static_cast<unsigned char>(b[i]))) {
-            return false;
-        }
-    }
-    return true;
-}
+#include "string_utils.hpp"
 
 // 解析字符串类型的值，失败返回 -1
 inline double parse_value(std::string str) {

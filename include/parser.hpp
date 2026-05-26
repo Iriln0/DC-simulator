@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "../utils/string_utils.hpp"
 #include "../utils/value_parser.hpp"
