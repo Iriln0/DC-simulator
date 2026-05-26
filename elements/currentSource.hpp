@@ -3,16 +3,16 @@
 
 #include "./element.hpp"
 
-class Inductor : public Element{
+class CurrentSource : public Element{
 public:
-    Inductor(std::string n, std::string n1, std::string n2, double v):
+    CurrentSource(std::string n, std::string n1, std::string n2, double v):
                 Element(std::move(n), {std::move(n1), std::move(n2)}, v) {}
-    ~Inductor() = default;
+    ~CurrentSource() = default;
 
     ElementType getType() const override {
-        return ElementType::Inductor;
+        return ElementType::CurrentSource;
     }
-    
+
 private:
     double _value;
 };

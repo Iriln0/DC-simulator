@@ -15,6 +15,8 @@ enum class ElementType{
 
 class Element{
 public:
+    Element(std::string n, std::vector<std::string> nodes, double v):
+                _name(std::move(n)), _nodes(std::move(nodes)), _value(v) {}
     virtual ~Element() = default;
 
     const std::string& getName() const {
@@ -30,6 +32,7 @@ public:
     }
 
     virtual ElementType getType() const = 0;
+
 protected:
     std::string _name;
     std::vector<std::string> _nodes;
