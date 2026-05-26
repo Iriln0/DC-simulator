@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "../include/circuit.hpp"
 #include "../include/parser.hpp"
 
 int main(int argc, char *argv[]) {
@@ -15,10 +16,24 @@ int main(int argc, char *argv[]) {
 
     Parser parser(argv[1]);
     Circuit circuit;
-    if(!parser.parse(&circuit)){
+    if(!parser.parse(circuit)){
         std::cerr << "Failed to parse the file" << std::endl;
         return 1;
     }
+
+    std::ofstream ofs; 
+    std::ostream* os = &std::cout;
+
+    if(argc == 3){
+        ofs.open(argv[2], std::ios::out | std::ios::trunc);
+        if(!ofs){
+            std::cerr << "Fail to open/create file <" << argv[2] << ">" << std::endl;
+            return 1;
+        }
+        os = &ofs;
+    }
+
+    circuit.print(*os);
 
     return 0;
 }
