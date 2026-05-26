@@ -15,8 +15,8 @@ enum class ElementType{
 
 class Element{
 public:
-    Element(std::string n, std::vector<std::string> nodes, double v):
-                _name(std::move(n)), _nodes(std::move(nodes)), _value(v) {}
+    Element(std::string n, std::vector<std::string> nodes):
+                _name(std::move(n)), _nodes(std::move(nodes)) {}
     virtual ~Element() = default;
 
     const std::string& getName() const {
