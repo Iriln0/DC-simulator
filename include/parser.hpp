@@ -17,6 +17,8 @@
 #include "../elements/voltageSource.hpp"
 #include "../elements/currentSource.hpp"
 #include "../elements/diode.hpp"
+#include "../elements/bjt.hpp"
+#include "../elements/mosfet.hpp"
 
 class Parser{
 public:
@@ -44,10 +46,10 @@ public:
 
             if(element_name.at(0) == '.'){
                 if(element_name == ".OP"){
-                    circuit.addCommand(Command{CommandType::Op, line});
+                    circuit.addCommand(Command{CommandType::Op});
                 }
                 else if(element_name == ".PRINT"){
-                    circuit.addCommand(Command{CommandType::Print, line});
+                    circuit.addCommand(Command{CommandType::Print});
                 }
                 else{
                     std::cerr << "Unknown command: " << line << std::endl;
@@ -105,21 +107,37 @@ public:
                 circuit.addElement(std::make_unique<CurrentSource>(element_name, node1, node2, value));
             }
             else if(element_name.at(0) == 'D'){
-                std::string node1, node2;
-                iss >> node1 >> node2;
-                circuit.addElement(std::make_unique<Diode>(element_name, node1, node2));
+                std::string anode, cathode, model;
+                iss >> anode >> cathode;
+                if (iss >> model) {
+                    circuit.addElement(
+                        std::make_unique<Diode>(element_name, anode, cathode, model));
+                } else {
+                    circuit.addElement(
+                        std::make_unique<Diode>(element_name, anode, cathode));
+                }
             }
             else if(element_name.at(0) == 'Q'){
-                /** @todo
-                 * BJT
-                 */
-                continue;
+                std::string collector, base, emitter, tok4, tok5;
+                iss >> collector >> base >> emitter >> tok4;
+                if (iss >> tok5) {
+                    circuit.addElement(std::make_unique<BJT>(
+                        element_name, collector, base, emitter, tok5, tok4));
+                } else {
+                    circuit.addElement(std::make_unique<BJT>(
+                        element_name, collector, base, emitter, tok4));
+                }
             }
             else if(element_name.at(0) == 'M'){
-                /** @todo
-                 * MOSFET
-                 */
-                continue;
+                std::string drain, gate, source, tok4, tok5;
+                iss >> drain >> gate >> source >> tok4;
+                if (iss >> tok5) {
+                    circuit.addElement(std::make_unique<MOSFET>(
+                        element_name, drain, gate, source, tok4, tok5));
+                } else {
+                    circuit.addElement(std::make_unique<MOSFET>(
+                        element_name, drain, gate, source, source, tok4));
+                }
             }
             else{
                 std::cerr << "Unknown element: " << line << std::endl;

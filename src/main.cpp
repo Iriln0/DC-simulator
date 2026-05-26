@@ -5,6 +5,7 @@
 
 #include "../include/circuit.hpp"
 #include "../include/parser.hpp"
+#include "../include/dc_solver.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -35,5 +36,7 @@ int main(int argc, char *argv[]) {
 
     circuit.print(*os);
 
+    DcSolver solver;
+    solver.solve(circuit, *os);
     return 0;
 }
