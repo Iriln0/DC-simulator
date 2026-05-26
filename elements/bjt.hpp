@@ -1,4 +1,5 @@
 #pragma once
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,6 +43,10 @@ public:
     }
 
     const std::string& substrate() const {
+        if (!hasSubstrate()) {
+            throw std::logic_error(
+                "BJT::substrate(): device has no substrate terminal (C-B-E only)");
+        }
         return _nodes[3];
     }
 

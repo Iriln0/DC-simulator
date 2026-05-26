@@ -6,16 +6,20 @@
 #include <memory>
 
 #include "../include/circuit.hpp"
-
+#include "../include/node_map.hpp"
 class DcSolver{
 public:
     DcSolver() = default;
     ~DcSolver() = default;
 
-    void solve(Circuit& circuit, std::ostream& os=std::cout) {
+    bool solve(Circuit& circuit, std::ostream& os=std::cout) {
         /**
          * @todo
          * Implement the DC solver
          */
+        nodeMap.buildFromCircuit(circuit);
     }
+
+private:
+    NodeMap nodeMap;
 };

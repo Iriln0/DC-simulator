@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 
 inline std::string trim(const std::string& str){
