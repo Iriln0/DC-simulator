@@ -43,10 +43,16 @@ public:
             iss >> element_name;
 
             if(element_name.at(0) == '.'){
-                /** @todo
-                 * control lines etc...
-                 */
-                continue;
+                if(element_name == ".OP"){
+                    circuit.addCommand(Command{CommandType::Op, line});
+                }
+                else if(element_name == ".PRINT"){
+                    circuit.addCommand(Command{CommandType::Print, line});
+                }
+                else{
+                    std::cerr << "Unknown command: " << line << std::endl;
+                    return false;
+                }
             }
             else if(element_name.at(0) == 'R'){
                 std::string node1, node2, str_value;

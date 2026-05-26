@@ -12,11 +12,6 @@ public:
     ElementType getType() const override {
         return ElementType::Diode;
     }
-
-    double getValue() const override {
-        return _value;
-    }
-
+    
 private:
-    double _value;
 };

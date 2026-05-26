@@ -7,6 +7,23 @@
 
 #include "../elements/element.hpp"
 
+enum class CommandType {
+    Op,
+    Print
+    /**
+     * @todo
+     * other command types to be added
+     */
+};
+
+struct Command{
+    CommandType type;
+    /**
+     * @todo
+     * Something else according to the needs
+     */
+};
+
 class Circuit{
 public:
     Circuit() = default;
@@ -15,6 +32,10 @@ public:
     bool empty() const {
         return elements.empty();
     }
+
+    void addCommand(Command command) {
+        commands.push_back(std::move(command));
+    }   
 
     void addElement(std::unique_ptr<Element> element) {
         elements.push_back(std::move(element));
@@ -35,5 +56,6 @@ public:
     }
 
 private:
+    std::vector<Command> commands;
     std::vector<std::unique_ptr<Element>> elements;
 };
