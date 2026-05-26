@@ -8,6 +8,14 @@
 #include "../utils/string_utils.hpp"
 #include "../utils/value_parser.hpp"
 
+#include "../elements/element.hpp"
+#include "../elements/resistor.hpp"
+#include "../elements/capacitor.hpp"
+#include "../elements/inductor.hpp"
+#include "../elements/voltageSource.hpp"
+#include "../elements/currentSource.hpp"
+#include "../elements/diode.hpp"
+
 class Parser{
 public:
     Parser(const std::string& fn): file(fn), filename(fn) {}
