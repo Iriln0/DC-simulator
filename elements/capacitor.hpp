@@ -1,11 +1,11 @@
 #pragma once
 #include <string>
 
-class Capacity{
+class Capacitor{
 public:
-    Capacity(std::string n, std::string n1, std::string n2, std::string v):
+    Capacitor(std::string n, std::string n1, std::string n2, std::string v):
                 name(n), node1(n1), node2(n2), value(v) {}
-    ~Capacity() = default;
+    ~Capacitor() = default;
 
 private:
     std::string name;

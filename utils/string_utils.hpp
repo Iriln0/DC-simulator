@@ -1,6 +1,6 @@
 #include <string>
 
-std::string trim(const std::string& str){
+inline std::string trim(const std::string& str){
     auto i = str.find_first_not_of(" \t\r\n");
     if(i == std::string::npos){
         return "";
