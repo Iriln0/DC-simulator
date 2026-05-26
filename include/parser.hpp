@@ -4,10 +4,12 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <memory>
 
 #include "../utils/string_utils.hpp"
 #include "../utils/value_parser.hpp"
 
+#include "../include/circuit.hpp"
 #include "../elements/element.hpp"
 #include "../elements/resistor.hpp"
 #include "../elements/capacitor.hpp"
@@ -21,10 +23,11 @@ public:
     Parser(const std::string& fn): file(fn), filename(fn) {}
     ~Parser(){file.close();}
 
-    void parse(){
+    // bool flag: 是否解析成功
+    bool parse(Circuit& circuit){
         if(!file.is_open()){
             std::cerr << "Can not open file <" << filename << ">!" << std::endl;
-            return;
+            return false;
         }
 
         std::string line;
@@ -34,16 +37,94 @@ public:
             if(line.empty()) continue;      // 忽略空行
             if(line.at(0)=='*') continue;   // 忽略注释行
 
-            lines.push_back(line);
-        }
-    }
+            std::stringstream iss(line);
 
-    const std::vector<std::string> getLines() const {
-        return lines;
+            std::string element_name;
+            iss >> element_name;
+
+            if(element_name.at(0) == '.'){
+                /** @todo
+                 * control lines etc...
+                 */
+                continue;
+            }
+            else if(element_name.at(0) == 'R'){
+                std::string node1, node2, str_value;
+                iss >> node1 >> node2 >> str_value;
+                double value = parse_value(str_value);
+                if(value == -1){
+                    std::cerr << "Wrong value: " << str_value << std::endl;
+                    return false;
+                }
+                circuit.addElement(std::make_unique<Resistor>(element_name, node1, node2, value));
+            }
+            else if(element_name.at(0) == 'L'){
+                std::string node1, node2, str_value;
+                iss >> node1 >> node2 >> str_value;
+                double value = parse_value(str_value);
+                if(value == -1){
+                    std::cerr << "Wrong value: " << str_value << std::endl;
+                    return false;
+                }
+                circuit.addElement(std::make_unique<Inductor>(element_name, node1, node2, value));
+            }
+            else if(element_name.at(0) == 'C'){
+                std::string node1, node2, str_value;
+                iss >> node1 >> node2 >> str_value;
+                double value = parse_value(str_value);
+                if(value == -1){
+                    std::cerr << "Wrong value: " << str_value << std::endl;
+                    return false;
+                }
+                circuit.addElement(std::make_unique<Capacitor>(element_name, node1, node2, value));
+            }
+            else if(element_name.at(0) == 'V'){
+                std::string node1, node2, str_value;
+                iss >> node1 >> node2 >> str_value;
+                double value = parse_value(str_value);
+                if(value == -1){
+                    std::cerr << "Wrong value: " << str_value << std::endl;
+                    return false;
+                }
+                circuit.addElement(std::make_unique<VoltageSource>(element_name, node1, node2, value));
+            }
+            else if(element_name.at(0) == 'I'){
+                std::string node1, node2, str_value;
+                iss >> node1 >> node2 >> str_value;
+                double value = parse_value(str_value);
+                if(value == -1){
+                    std::cerr << "Wrong value: " << str_value << std::endl;
+                    return false;
+                }
+                circuit.addElement(std::make_unique<CurrentSource>(element_name, node1, node2, value));
+            }
+            else if(element_name.at(0) == 'D'){
+                std::string node1, node2;
+                iss >> node1 >> node2;
+                circuit.addElement(std::make_unique<Diode>(element_name, node1, node2));
+            }
+            else if(element_name.at(0) == 'Q'){
+                /** @todo
+                 * BJT
+                 */
+                continue;
+            }
+            else if(element_name.at(0) == 'M'){
+                /** @todo
+                 * MOSFET
+                 */
+                continue;
+            }
+            else{
+                std::cerr << "Unknown element: " << line << std::endl;
+                return false;
+            }
+        }
+
+        return true;
     }
 
 private:
     std::ifstream file;
     std::string filename;
-    std::vector<std::string> lines;
 };

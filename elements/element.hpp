@@ -33,6 +33,8 @@ public:
 
     virtual ElementType getType() const = 0;
 
+    virtual double getValue() const = 0;
+
 protected:
     std::string _name;
     std::vector<std::string> _nodes;

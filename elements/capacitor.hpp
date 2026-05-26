@@ -2,6 +2,7 @@
 #include <string>
 
 #include "./element.hpp"
+
 class Capacitor : public Element{
 public:
     Capacitor(std::string n, std::string n1, std::string n2, double v):
@@ -10,6 +11,10 @@ public:
         
     ElementType getType() const override {
         return ElementType::Capacitor;
+    }
+
+    double getValue() const override {
+        return _value;
     }
 
 private:

@@ -13,6 +13,10 @@ public:
         return ElementType::Resistor;
     }
 
+    double getValue() const override {
+        return _value;
+    }
+
 private:
     double _value;
 };

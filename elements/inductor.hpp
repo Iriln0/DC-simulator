@@ -12,7 +12,11 @@ public:
     ElementType getType() const override {
         return ElementType::Inductor;
     }
-    
+
+    double getValue() const override {
+        return _value;
+    }
+
 private:
     double _value;
 };

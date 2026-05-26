@@ -13,6 +13,9 @@ public:
         return ElementType::CurrentSource;
     }
 
+    double getValue() const override {
+        return _value;
+    }
 private:
     double _value;
 };

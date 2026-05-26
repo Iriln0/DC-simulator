@@ -14,7 +14,11 @@ int main(int argc, char *argv[]) {
     }
 
     Parser parser(argv[1]);
-    parser.parse();
+    Circuit circuit;
+    if(!parser.parse(&circuit)){
+        std::cerr << "Failed to parse the file" << std::endl;
+        return 1;
+    }
 
     return 0;
 }
