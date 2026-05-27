@@ -37,6 +37,10 @@ int main(int argc, char *argv[]) {
     circuit.print(*os);
 
     DcSolver solver;
-    solver.solve(circuit, *os);
+    if(!solver.solve(circuit, *os)){
+        std::cerr << "DcAnalysis Failed!" << std::endl;
+        return 1; 
+    };
+    
     return 0;
 }
