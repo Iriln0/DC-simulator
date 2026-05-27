@@ -16,6 +16,10 @@ public:
     double getValue() const override {
         return _value;
     }
+    
+    const std::string& getModel() const override {
+        return "";
+    }
 
 private:
     double _value;

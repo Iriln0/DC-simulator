@@ -59,7 +59,7 @@ public:
 
     // 打印电路详细信息
     void print(std::ostream& os=std::cout) const{
-        os << "==================== Circuit ====================" << std::endl;
+        os << "====================== Circuit ======================" << std::endl;
         os << "Elements: " << elements.size() << "" << std::endl;
         for(const auto& element: elements){
             // 元件名 元件类型
@@ -83,7 +83,13 @@ public:
                 case ElementType::CurrentSource:
                     os << "value: " << element->getValue() << std::endl;
                     break;
+                case ElementType::BJT:
+                case ElementType::Diode:
+                case ElementType::MOSFET:
+                    os << "model: " << element->getModel() << std::endl;
+                    break;
                 default:
+                    std::cerr << "Wrong type!" << std::endl;
                     break;
             }
             os << std::endl;
@@ -93,7 +99,7 @@ public:
             os << commandTypeName(command.type) << std::endl;
         }
 
-        os << "=================================================" << std::endl;
+        os << "=====================================================" << std::endl;
     }
 
 private:

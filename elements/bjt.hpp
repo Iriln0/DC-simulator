@@ -22,7 +22,7 @@ public:
         return 0.0;
     }
 
-    const std::string& getModel() const {
+    const std::string& getModel() const override {
         return _model;
     }
 

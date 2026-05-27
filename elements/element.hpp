@@ -13,7 +13,7 @@ enum class ElementType{
     MOSFET
 };
 
-inline char* elementTypeName(ElementType type){
+inline const char* elementTypeName(ElementType type){
     switch(type){
         case ElementType::Resistor:  return "Resistor";
         case ElementType::Capacitor: return "Capacitor";
@@ -49,6 +49,8 @@ public:
     virtual ElementType getType() const = 0;
 
     virtual double getValue() const = 0;
+
+    virtual const std::string& getModel() const = 0;
 
 protected:
     std::string _name;

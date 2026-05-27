@@ -14,10 +14,11 @@ test: $(TARGET)
 	@mkdir -p testoutput
 	@for f in $(TESTCASES); do \
 		base=$$(basename $$f .cir); \
-		echo "===== Running $$f ====="; \
+		echo "======= Running $$f ======="; \
 		./$(TARGET) $$f testoutput/$$base.out; \
 	done
+	echo "Test Completed";
 
 clean: 
 	rm -f $(TARGET)
-	rm -rf $(TESTOUTPUT)
+	rm -rf testoutput
