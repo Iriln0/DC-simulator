@@ -23,6 +23,15 @@ struct Command{
      */
 };
 
+inline const char* commandTypeName(CommandType type){
+    switch(type){
+        case CommandType::Op:   return "Op";
+        case CommandType::Print: return "Print";
+        default: return "Unknown";
+    }
+    return "Unknown";
+}
+
 class Circuit{
 public:
     Circuit() = default;
@@ -48,10 +57,43 @@ public:
         return elements;
     }
 
+    // 打印电路详细信息
     void print(std::ostream& os=std::cout) const{
-        /**
-         * @todo 根据指令进行相应的输出
-         */
+        os << "==================== Circuit ====================" << std::endl;
+        os << "Elements: " << elements.size() << "" << std::endl;
+        for(const auto& element: elements){
+            // 元件名 元件类型
+            os << " " << element->getName() << "    "
+             << elementTypeName(element->getType()) << "    ";
+
+            // 元件节点信息
+            os << "nodes: ";
+            std::vector<std::string> nodes = element->getNodes();
+            for(auto& node: nodes){
+                os << node << " ";
+            }
+
+            os << " ";
+
+            switch(element->getType()){
+                case ElementType::Resistor:
+                case ElementType::Capacitor:
+                case ElementType::Inductor:
+                case ElementType::VoltageSource:
+                case ElementType::CurrentSource:
+                    os << "value: " << element->getValue() << std::endl;
+                    break;
+                default:
+                    break;
+            }
+            os << std::endl;
+        }
+        os << "Commands: " << commands.size() << std::endl;
+        for(auto& command: commands){
+            os << commandTypeName(command.type) << std::endl;
+        }
+
+        os << "=================================================" << std::endl;
     }
 
 private:

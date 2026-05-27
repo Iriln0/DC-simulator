@@ -18,6 +18,8 @@ public:
          * Implement the DC solver
          */
         nodeMap.buildFromCircuit(circuit);
+        
+        return true;
     }
 
 private:

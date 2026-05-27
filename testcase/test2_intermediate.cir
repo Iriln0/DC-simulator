@@ -1,0 +1,26 @@
+* Test 2: Multi-node RLC network with dual supplies
+* Validates R/L/C/V/I, comments, GND alias, and multiple unit suffixes
+
+* --- Input stage ---
+V1 in1 GND 10
+V2 in2 0 -5
+
+R1 in1 n1 10k
+R2 in1 n2 4.7k
+R3 n1 mid 2.2k
+R4 n2 mid 2.2k
+R5 mid GND 1k
+
+* --- Storage elements ---
+C1 n1 mid 100n
+L1 n2 mid 1m
+C2 mid out 10p
+
+* --- Bias and load ---
+Ibias 0 mid 500u
+Rload mid out 3.3k
+Rout out 0 10
+
+* --- Commands ---
+.OP
+.PRINT

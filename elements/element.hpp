@@ -13,6 +13,21 @@ enum class ElementType{
     MOSFET
 };
 
+inline char* elementTypeName(ElementType type){
+    switch(type){
+        case ElementType::Resistor:  return "Resistor";
+        case ElementType::Capacitor: return "Capacitor";
+        case ElementType::Inductor: return "Inductor";
+        case ElementType::VoltageSource: return "VoltageSource";
+        case ElementType::CurrentSource: return "CurrentSource";
+        case ElementType::Diode: return "Diode";
+        case ElementType::BJT: return "BJT";
+        case ElementType::MOSFET: return "MOSFET";
+        default: return "Unknown";
+    }
+    return "Unknown";
+}
+
 class Element{
 public:
     Element(std::string n, std::vector<std::string> nodes):

@@ -1,0 +1,10 @@
+* Test 1: Basic resistive DC network
+* Validates R, V, I parsing, unit suffixes, and .OP command
+
+V1 vdd 0 5
+R1 vdd n1 1k
+R2 n1 0 2k
+I1 0 n1 1m
+R3 n1 n2 470
+R4 n2 0 330
+.OP
