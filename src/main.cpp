@@ -3,9 +3,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "../include/circuit.hpp"
-#include "../include/parser.hpp"
-#include "../include/dc_solver.hpp"
+#include "../include/circuit.h"
+#include "../include/parser.h"
+#include "../include/dc_solver.h"
 
 int main(int argc, char *argv[]) {
 
