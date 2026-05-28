@@ -176,8 +176,6 @@ bool Parser::parse(Circuit& circuit) {
         return false;
     }
 
-    circuit.models().installBuiltinDefaults();
-
     file.clear();
     file.seekg(0);
     if (!file) {
@@ -189,7 +187,10 @@ bool Parser::parse(Circuit& circuit) {
         return false;
     }
 
-    if (!circuit.validateModels()) {
+    try {
+        circuit.validateModels();
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << std::endl;
         return false;
     }
 

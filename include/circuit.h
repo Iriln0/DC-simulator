@@ -46,7 +46,7 @@ public:
     ModelLibrary& models();
     const ModelLibrary& models() const;
 
-    bool validateModels() const;
+    void validateModels() const;
 
     // 打印电路详细信息
     void print(std::ostream& os=std::cout) const;

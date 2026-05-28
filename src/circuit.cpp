@@ -1,5 +1,6 @@
 #include "../include/circuit.h"
 
+#include <stdexcept>
 #include <utility>
 
 const char* commandTypeName(CommandType type){
@@ -43,45 +44,49 @@ const ModelLibrary& Circuit::models() const {
     return _models;
 }
 
-bool Circuit::validateModels() const {
+void Circuit::validateModels() const {
     for (const auto& element : elements) {
+        const std::string& modelName = element->getModel();
+        const std::string& elementName = element->getName();
+
         switch (element->getType()) {
             case ElementType::Diode:
-                if (!element->getModel().empty() &&
-                    !_models.validateDeviceModel(element->getModel(), ModelType::Diode)) {
-                    std::cerr << "Invalid diode model for " << element->getName()
-                              << ": " << element->getModel() << std::endl;
-                    return false;
+                if (modelName.empty()) {
+                    throw std::runtime_error("Undefined model for diode " + elementName);
+                }
+                if (!_models.validateDeviceModel(modelName, ModelType::Diode)) {
+                    throw std::runtime_error("Unknown or invalid diode model for " +
+                                             elementName + ": " + modelName);
                 }
                 break;
             case ElementType::BJT: {
-                const std::string& modelName = element->getModel();
+                if (modelName.empty()) {
+                    throw std::runtime_error("Undefined model for BJT " + elementName);
+                }
                 const DeviceModel* model = _models.find(modelName);
                 if (model == nullptr) {
-                    std::cerr << "Unknown BJT model for " << element->getName() << ": "
-                              << modelName << std::endl;
-                    return false;
+                    throw std::runtime_error("Unknown BJT model for " + elementName + ": " +
+                                             modelName);
                 }
                 if (model->type() != ModelType::BJT_NPN &&
                     model->type() != ModelType::BJT_PNP) {
-                    std::cerr << "Invalid BJT model type for " << element->getName()
-                              << std::endl;
-                    return false;
+                    throw std::runtime_error("Invalid BJT model type for " + elementName +
+                                             ": " + modelName);
                 }
                 break;
             }
             case ElementType::MOSFET: {
-                const std::string& modelName = element->getModel();
+                if (modelName.empty()) {
+                    throw std::runtime_error("Undefined model for MOSFET " + elementName);
+                }
                 const DeviceModel* model = _models.find(modelName);
                 if (model == nullptr) {
-                    std::cerr << "Unknown MOSFET model for " << element->getName() << ": "
-                              << modelName << std::endl;
-                    return false;
+                    throw std::runtime_error("Unknown MOSFET model for " + elementName + ": " +
+                                             modelName);
                 }
                 if (model->type() != ModelType::NMOS && model->type() != ModelType::PMOS) {
-                    std::cerr << "Invalid MOSFET model type for " << element->getName()
-                              << std::endl;
-                    return false;
+                    throw std::runtime_error("Invalid MOSFET model type for " + elementName +
+                                             ": " + modelName);
                 }
                 break;
             }
@@ -89,7 +94,6 @@ bool Circuit::validateModels() const {
                 break;
         }
     }
-    return true;
 }
 
 void Circuit::print(std::ostream& os) const{

@@ -20,7 +20,8 @@ Q1 coll bias emit NPN
 * PNP + diode network around collector
 Q2 coll bias vcc sub PNP
 D1 vcc coll DMOD
-D2 coll vee DMOD
+D2 coll 0 DMOD
+Rvee vee 0 10k
 Rsub sub vcc 10Meg
 
 * CMOS output stage
@@ -29,10 +30,9 @@ M2 out bias vcc vcc PMOS
 RDR vcc out 4.7k
 RLOAD out 0 10k
 
-* Storage and auxiliary source
+* Storage elements
 C1 coll 0 1n
 L1 out 0 4.7u
-Ibias 0 bias 50u
 
 .OP
 .PRINT

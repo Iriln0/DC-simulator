@@ -126,42 +126,6 @@ void ModelLibrary::applyParameter(DeviceModel& model, const std::string& key,
     }
 }
 
-DeviceModel ModelLibrary::makeBuiltin(const std::string& name, ModelType type) {
-    DeviceModel model(name, type);
-    switch (type) {
-        case ModelType::Diode:
-            break;
-        case ModelType::BJT_NPN:
-            break;
-        case ModelType::BJT_PNP:
-            model.bjt().Bf = 50.0;
-            break;
-        case ModelType::NMOS:
-            model.mos().Vto = 0.7;
-            model.mos().Kp = 2e-5;
-            break;
-        case ModelType::PMOS:
-            model.mos().Vto = -0.7;
-            model.mos().Kp = 1e-5;
-            break;
-    }
-    return model;
-}
-
-void ModelLibrary::installBuiltinDefaults() {
-    const char* builtinNames[] = {"DMOD", "NPN", "PNP", "NMOS", "PMOS"};
-    const ModelType builtinTypes[] = {
-        ModelType::Diode, ModelType::BJT_NPN, ModelType::BJT_PNP,
-        ModelType::NMOS, ModelType::PMOS};
-
-    for (size_t i = 0; i < sizeof(builtinNames) / sizeof(builtinNames[0]); ++i) {
-        const std::string name(builtinNames[i]);
-        if (!contains(name)) {
-            add(makeBuiltin(name, builtinTypes[i]));
-        }
-    }
-}
-
 bool ModelLibrary::parseLine(const std::string& line) {
     std::stringstream iss(line);
     std::string dotModel;
@@ -245,7 +209,7 @@ const DeviceModel& ModelLibrary::get(const std::string& name) const {
 bool ModelLibrary::validateDeviceModel(const std::string& modelName,
                                        ModelType expected) const {
     if (modelName.empty()) {
-        return expected == ModelType::Diode;
+        return false;
     }
 
     const DeviceModel* model = find(modelName);

@@ -63,7 +63,6 @@ private:
 class ModelLibrary {
 public:
     bool parseLine(const std::string& line);
-    void installBuiltinDefaults();
 
     bool add(DeviceModel model);
     const DeviceModel* find(const std::string& name) const;
@@ -80,7 +79,6 @@ private:
     static ModelType parseModelType(const std::string& typeToken);
     static void applyParameter(DeviceModel& model, const std::string& key,
                                const std::string& valueToken);
-    static DeviceModel makeBuiltin(const std::string& name, ModelType type);
 
     std::unordered_map<std::string, DeviceModel> _models;
 };
