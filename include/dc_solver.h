@@ -20,8 +20,10 @@ public:
 private:
     bool buildMnaSystem(const Circuit& circuit);
     int countVoltageSources(const Circuit& circuit) const;
+    int countInductors(const Circuit& circuit) const;
     int nodeEqIndex(const std::string& node) const;
     int voltageSourceEqIndex(int vsOrdinal) const;
+    int inductorEqIndex(int indOrdinal) const;
 
     bool assembleLinearSystem(const Circuit& circuit);
 
@@ -31,6 +33,11 @@ private:
 
     void stampVoltageSource(const std::string& nPlus, const std::string& nMinus, double voltage,
                             int vsEqIndex);
+
+    void stampInductorShort(const std::string& nPlus, const std::string& nMinus, int indEqIndex);
+
+    void stampBranchVoltage(const std::string& nPlus, const std::string& nMinus, double voltage,
+                            int eqRow);
 
     bool printOpResults(const Circuit& circuit, std::ostream& os) const;
 
@@ -46,5 +53,6 @@ private:
     std::vector<double> solution;
 
     int voltageSourceCount_ = 0;
+    int inductorCount_ = 0;
     int systemSize_ = 0;
 };

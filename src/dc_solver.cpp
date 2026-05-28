@@ -1,6 +1,7 @@
 #include "../include/dc_solver.h"
 
 #include "../elements/currentSource.h"
+#include "../elements/inductor.h"
 #include "../elements/resistor.h"
 #include "../elements/voltageSource.h"
 
@@ -8,6 +9,16 @@ int DcSolver::countVoltageSources(const Circuit& circuit) const {
     int count = 0;
     for (const auto& elem : circuit.getElements()) {
         if (elem->getType() == ElementType::VoltageSource) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+int DcSolver::countInductors(const Circuit& circuit) const {
+    int count = 0;
+    for (const auto& elem : circuit.getElements()) {
+        if (elem->getType() == ElementType::Inductor) {
             ++count;
         }
     }
@@ -22,10 +33,15 @@ int DcSolver::voltageSourceEqIndex(int vsOrdinal) const {
     return nodeMap.nodeCount() + vsOrdinal;
 }
 
+int DcSolver::inductorEqIndex(int indOrdinal) const {
+    return nodeMap.nodeCount() + voltageSourceCount_ + indOrdinal;
+}
+
 bool DcSolver::buildMnaSystem(const Circuit& circuit) {
     nodeMap.buildFromCircuit(circuit);
     voltageSourceCount_ = countVoltageSources(circuit);
-    systemSize_ = nodeMap.nodeCount() + voltageSourceCount_;
+    inductorCount_ = countInductors(circuit);
+    systemSize_ = nodeMap.nodeCount() + voltageSourceCount_ + inductorCount_;
 
     if (systemSize_ == 0) {
         return false;
@@ -63,14 +79,6 @@ bool DcSolver::stampResistor(const std::string& n1, const std::string& n2, doubl
 
 void DcSolver::stampCurrentSource(const std::string& nPlus, const std::string& nMinus,
                                   double current) {
-    (void)nPlus;
-    (void)nMinus;
-    (void)current;
-
-    /**
-     * @todo
-     * Independent current source: +I into n-, -I from n+ in KCL rhs.
-     */
     int i = nodeEqIndex(nPlus);
     int j = nodeEqIndex(nMinus);
 
@@ -82,36 +90,36 @@ void DcSolver::stampCurrentSource(const std::string& nPlus, const std::string& n
     }
 }
 
-void DcSolver::stampVoltageSource(const std::string& nPlus, const std::string& nMinus,
-                                  double voltage, int vsEqIndex) {
-    (void)nPlus;
-    (void)nMinus;
-    (void)voltage;
-    (void)vsEqIndex;
+void DcSolver::stampBranchVoltage(const std::string& nPlus, const std::string& nMinus,
+                                  double voltage, int eqRow) {
+    const int i = nodeEqIndex(nPlus);
+    const int j = nodeEqIndex(nMinus);
 
-    /**
-     * @todo
-     * Stamp MNA rows for V(n+) - V(n-) = voltage using vsEqIndex column/row.
-     */
-    int i = nodeEqIndex(nPlus);
-    int j = nodeEqIndex(nMinus);
-    int k = voltageSourceEqIndex(vsEqIndex);
-
-    if(k < 0){
+    if (eqRow < 0) {
         return;
     }
 
-    const std::size_t uk = static_cast<std::size_t>(k);
+    const std::size_t uk = static_cast<std::size_t>(eqRow);
 
-    if(i >= 0){
+    if (i >= 0) {
         jacobian.add(static_cast<std::size_t>(i), uk, 1.0);
         jacobian.add(uk, static_cast<std::size_t>(i), 1.0);
     }
-    if(j >= 0){
+    if (j >= 0) {
         jacobian.add(static_cast<std::size_t>(j), uk, -1.0);
         jacobian.add(uk, static_cast<std::size_t>(j), -1.0);
     }
     rhs[uk] = voltage;
+}
+
+void DcSolver::stampVoltageSource(const std::string& nPlus, const std::string& nMinus,
+                                  double voltage, int vsEqIndex) {
+    stampBranchVoltage(nPlus, nMinus, voltage, voltageSourceEqIndex(vsEqIndex));
+}
+
+void DcSolver::stampInductorShort(const std::string& nPlus, const std::string& nMinus,
+                                  int indEqIndex) {
+    stampBranchVoltage(nPlus, nMinus, 0.0, inductorEqIndex(indEqIndex));
 }
 
 bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
@@ -119,6 +127,7 @@ bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
     std::fill(rhs.begin(), rhs.end(), 0.0);
 
     int vsOrdinal = 0;
+    int indOrdinal = 0;
     for (const auto& elem : circuit.getElements()) {
         switch (elem->getType()) {
             case ElementType::Resistor: {
@@ -143,9 +152,16 @@ bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
                 break;
             }
             case ElementType::Capacitor:
-            case ElementType::Inductor:
-                // DC: C 开路、L 短路；线性里程碑先不 stamp
+                // C 开路，对导纳矩阵不做贡献
                 break;
+            case ElementType::Inductor: {
+                // L 短路，作为电压附加条件：等效于在两节点间接入0V电压源
+                const auto& inductor = static_cast<const Inductor&>(*elem);
+                const auto& nodes = inductor.getNodes();
+                stampInductorShort(nodes[0], nodes[1], indOrdinal);
+                ++indOrdinal;
+                break;
+            }
             case ElementType::Diode:
             case ElementType::BJT:
             case ElementType::MOSFET:
