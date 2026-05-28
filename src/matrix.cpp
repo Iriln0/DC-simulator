@@ -1,5 +1,6 @@
 #include "../include/matrix.h"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
@@ -47,6 +48,21 @@ bool Matrix::isFactorized() const {
 
 const std::vector<std::size_t>& Matrix::pivotPermutation() const {
     return _pivot;
+}
+
+void Matrix::initPivotPermutation() {
+    const std::size_t m = rows();
+    _pivot.resize(m);
+    for (std::size_t i = 0; i < m; ++i) {
+        _pivot[i] = i;
+    }
+}
+
+std::size_t Matrix::luStepCount() const {
+    if (rows() == 0 || cols() == 0) {
+        return 0;
+    }
+    return std::min(rows() - 1, cols());
 }
 
 double& Matrix::at(std::size_t row, std::size_t col) {
@@ -167,13 +183,35 @@ bool Matrix::solve(std::vector<double>& x, const std::vector<double>& b) const {
 }
 
 bool Matrix::luDecomposePartialPivot() {
-    /**
-     * @todo
-     * PA = LU with partial row pivoting; store permutation in _pivot.
-     * Set _factorized = true on success.
-     */
     invalidateFactorization();
-    return false;
+    if (empty()) {
+        return false;
+    }
+
+    initPivotPermutation();
+
+    const std::size_t steps = luStepCount();
+    for (std::size_t step = 0; step < steps; ++step) {
+        const std::size_t p_row = findPivotRow(step);
+        if (isPivotTooSmall(std::abs(at(p_row, step)))) {
+            invalidateFactorization();
+            return false;
+        }
+        if (p_row != step) {
+            swapRows(step, p_row);
+        }
+        double pivot = this->at(step,step);
+        for(size_t i = step+1; i < this->rows(); ++i){
+            double lambda = this->at(i,step)/pivot;
+            for(size_t j = step+1; j < this->cols(); ++j){
+                this->at(i,j) += -lambda*this->at(step,j);
+            }
+            this->at(i,step) = lambda;
+        }
+    }
+
+    _factorized = true;
+    return true;
 }
 
 bool Matrix::luSolvePartialPivot(std::vector<double>& x, const std::vector<double>& b) const {
@@ -188,7 +226,7 @@ bool Matrix::luSolvePartialPivot(std::vector<double>& x, const std::vector<doubl
     return false;
 }
 
-std::size_t Matrix::findPivotRow(std::size_t step){
+std::size_t Matrix::findPivotRow(std::size_t step) const {
     size_t idx = step;  // 主元的行索引
     double max_val = std::abs(this->at(step, step));    //主元值(in absolute value)
     for(std::size_t i = step+1; i < this->rows(); ++i){
