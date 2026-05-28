@@ -6,7 +6,9 @@
 #include <memory>
 
 #include "./circuit.h"
+#include "./matrix.h"
 #include "./node_map.h"
+
 class DcSolver{
 public:
     DcSolver() = default;
@@ -16,4 +18,7 @@ public:
 
 private:
     NodeMap nodeMap;
+    Matrix jacobian;
+    std::vector<double> rhs;
+    std::vector<double> solution;
 };
