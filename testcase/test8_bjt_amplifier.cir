@@ -1,0 +1,27 @@
+* Test 8: Two-stage BJT amplifier chain
+* NPN 3-terminal + PNP 4-terminal with substrate
+
+.model NPN NPN ( Is=1e-16 Bf=120 Br=1 Vaf=120 )
+.model PNP PNP ( Is=1e-16 Bf=60 Br=2 Vaf=90 )
+
+VCC vcc 0 12
+VBB bias 0 2.4
+
+R1 vcc coll1 4.7k
+R2 coll1 base1 10k
+R3 base1 bias 22k
+R4 emit1 0 470
+Q1 coll1 base1 emit1 NPN
+
+R5 vcc coll2 3.3k
+R6 coll2 base2 15k
+R7 base2 coll1 47k
+R8 emit2 vcc 1k
+Q2 coll2 base2 emit2 sub PNP
+Rsub sub vcc 10Meg
+
+Ccou coll1 base2 10n
+Ree emit1 0 220
+
+.OP
+.PRINT

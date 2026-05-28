@@ -1,0 +1,21 @@
+* Test 4: Large linear resistive mesh
+* Multiple voltage/current sources, GND alias, unit suffixes
+
+V1 va 0 12
+V2 vb 0 5
+I1 0 vc 2m
+
+R1 va n1 1k
+R2 n1 vb 2.2k
+R3 n1 n2 3.3k
+R4 n2 0 4.7k
+R5 vb n3 5.6k
+R6 n3 n2 6.8k
+R7 n2 nc 7.5k
+R8 nc vc 8.2k
+R9 vc 0 9.1k
+R10 va nc 10k
+R11 n3 GND 1Meg
+
+.OP
+.PRINT

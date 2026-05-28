@@ -1,0 +1,14 @@
+---- DC Operating Point ----
+V(vcc) = 5
+V(vee) = -5
+V(in) = 2
+V(top) = 2.5
+V(mid) = 1.04058e-10
+V(bot) = -2.5
+---- DC Print ----
+V(vcc) = 5
+V(vee) = -5
+V(in) = 2
+V(top) = 2.5
+V(mid) = 1.04058e-10
+V(bot) = -2.5

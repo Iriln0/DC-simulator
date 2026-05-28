@@ -18,33 +18,24 @@ public:
     bool solve(Circuit& circuit, std::ostream& os = std::cout);
 
 private:
-    // 任务 1：MNA 维数与节点/方程下标
     bool buildMnaSystem(const Circuit& circuit);
     int countVoltageSources(const Circuit& circuit) const;
     int nodeEqIndex(const std::string& node) const;
     int voltageSourceEqIndex(int vsOrdinal) const;
 
-    // 任务 2：组装 G 与 rhs
     bool assembleLinearSystem(const Circuit& circuit);
 
-    // 任务 3：线性元件 stamp
     bool stampResistor(const std::string& n1, const std::string& n2, double resistance);
 
-    /**
-     * @todo 独立电流源：电流从 n+ 流向 n-，只修改 rhs（KCL）。
-     */
     void stampCurrentSource(const std::string& nPlus, const std::string& nMinus, double current);
 
-    /**
-     * @todo 独立电压源：MNA 扩维，节点行耦合 I_V，约束行 V(n+)-V(n-)=Vs。
-     */
     void stampVoltageSource(const std::string& nPlus, const std::string& nMinus, double voltage,
                             int vsEqIndex);
 
-    /**
-     * @todo 根据 .OP / .PRINT 输出节点电压等。
-     */
     bool printOpResults(const Circuit& circuit, std::ostream& os) const;
+
+    double nodeVoltage(const std::string& node) const;
+    void printAllNodeVoltages(const char* sectionTitle, std::ostream& os) const;
 
     static bool isGroundNode(const std::string& node);
     static bool hasReferenceGround(Circuit& circuit);

@@ -1,0 +1,24 @@
+* Test 6: Multi-stage RLC network (DC: C open, L short in ngspice)
+* Validates L/C density, dual rails, current bias
+
+V1 vin 0 8
+V2 vref GND -3
+
+Rin vin n1 4.7k
+R1 n1 n2 2.2k
+R2 n2 n3 1k
+R3 n3 vref 3.3k
+R4 n2 mid 5.6k
+R5 mid 0 10k
+
+C1 n1 n2 100n
+C2 n2 mid 10n
+C3 mid n3 1u
+L1 n1 mid 2.2m
+L2 mid n3 4.7m
+
+Ib mid 0 250u
+Rout n3 0 470
+
+.OP
+.PRINT

@@ -1,0 +1,38 @@
+* Test 10: Mixed signal path (R/L/C + D + Q + M)
+* Full device coverage; ngspice-compatible netlist
+
+.model DMOD D ( Is=1e-14 N=1 )
+.model NPN NPN ( Is=1e-16 Bf=100 Br=1 Vaf=100 )
+.model PNP PNP ( Is=1e-16 Bf=50 Br=2 Vaf=80 )
+.model NMOS NMOS ( Vto=0.7 Kp=20u Lambda=0.02 )
+.model PMOS PMOS ( Vto=-0.7 Kp=10u Lambda=0.02 )
+
+VCC vcc 0 5
+VEE vee 0 -5
+
+* Bias divider and BJT input
+R1 vcc bias 12k
+R2 bias 0 12k
+RE emit 0 330
+RC vcc coll 2.2k
+Q1 coll bias emit NPN
+
+* PNP + diode network around collector
+Q2 coll bias vcc sub PNP
+D1 vcc coll DMOD
+D2 coll vee DMOD
+Rsub sub vcc 10Meg
+
+* CMOS output stage
+M1 out bias 0 0 NMOS
+M2 out bias vcc vcc PMOS
+RDR vcc out 4.7k
+RLOAD out 0 10k
+
+* Storage and auxiliary source
+C1 coll 0 1n
+L1 out 0 4.7u
+Ibias 0 bias 50u
+
+.OP
+.PRINT

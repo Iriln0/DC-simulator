@@ -71,6 +71,15 @@ void DcSolver::stampCurrentSource(const std::string& nPlus, const std::string& n
      * @todo
      * Independent current source: +I into n-, -I from n+ in KCL rhs.
      */
+    int i = nodeEqIndex(nPlus);
+    int j = nodeEqIndex(nMinus);
+
+    if(i >=0){
+        rhs[static_cast<std::size_t>(i)] -= current;
+    }
+    if(j >=0){
+        rhs[static_cast<std::size_t>(j)] += current;
+    }
 }
 
 void DcSolver::stampVoltageSource(const std::string& nPlus, const std::string& nMinus,
@@ -84,6 +93,25 @@ void DcSolver::stampVoltageSource(const std::string& nPlus, const std::string& n
      * @todo
      * Stamp MNA rows for V(n+) - V(n-) = voltage using vsEqIndex column/row.
      */
+    int i = nodeEqIndex(nPlus);
+    int j = nodeEqIndex(nMinus);
+    int k = voltageSourceEqIndex(vsEqIndex);
+
+    if(k < 0){
+        return;
+    }
+
+    const std::size_t uk = static_cast<std::size_t>(k);
+
+    if(i >= 0){
+        jacobian.add(static_cast<std::size_t>(i), uk, 1.0);
+        jacobian.add(uk, static_cast<std::size_t>(i), 1.0);
+    }
+    if(j >= 0){
+        jacobian.add(static_cast<std::size_t>(j), uk, -1.0);
+        jacobian.add(uk, static_cast<std::size_t>(j), -1.0);
+    }
+    rhs[uk] = voltage;
 }
 
 bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
@@ -134,14 +162,40 @@ bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
     return true;
 }
 
-bool DcSolver::printOpResults(const Circuit& circuit, std::ostream& os) const {
-    (void)circuit;
-    (void)os;
+double DcSolver::nodeVoltage(const std::string& node) const {
+    if (isGroundNode(node)) {
+        return 0.0;
+    }
 
-    /**
-     * @todo
-     * Print V(node) from solution[] and nodeMap; honor .OP / .PRINT commands.
-     */
+    const int idx = nodeMap.indexOf(node);
+    if (idx < 0 || static_cast<std::size_t>(idx) >= solution.size()) {
+        return 0.0;
+    }
+
+    return solution[static_cast<std::size_t>(idx)];
+}
+
+void DcSolver::printAllNodeVoltages(const char* sectionTitle, std::ostream& os) const {
+    os << sectionTitle << std::endl;
+    for (const std::string& name : nodeMap.nodeNameByIdx()) {
+        os << "V(" << name << ") = " << nodeVoltage(name) << std::endl;
+    }
+}
+
+bool DcSolver::printOpResults(const Circuit& circuit, std::ostream& os) const {
+    for (const Command& cmd : circuit.getCommands()) {
+        switch (cmd.type) {
+            case CommandType::Op:
+                printAllNodeVoltages("---- DC Operating Point ----", os);
+                break;
+            case CommandType::Print:
+                printAllNodeVoltages("---- DC Print ----", os);
+                break;
+            default:
+                break;
+        }
+    }
+
     return true;
 }
 

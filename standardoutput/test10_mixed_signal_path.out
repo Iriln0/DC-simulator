@@ -1,0 +1,16 @@
+---- DC Operating Point ----
+V(vcc) = 5
+V(vee) = -5
+V(bias) = 2.44928
+V(emit) = 0.000263794
+V(coll) = -1.40898e-16
+V(sub) = 4.99997
+V(out) = 0
+---- DC Print ----
+V(vcc) = 5
+V(vee) = -5
+V(bias) = 2.44928
+V(emit) = 0.000263794
+V(coll) = -1.40898e-16
+V(sub) = 4.99997
+V(out) = 0

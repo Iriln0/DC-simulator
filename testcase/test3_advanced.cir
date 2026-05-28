@@ -1,5 +1,5 @@
-* Test 3: Mixed linear and nonlinear circuit
-* Validates D, Q, M devices, model names, optional terminals, and all commands
+* Test 3: Mixed linear and nonlinear circuit (ngspice-compatible)
+* Validates D, Q, M, model names, optional substrate/bulk, .OP and .PRINT
 
 .model DMOD D ( Is=1e-14 N=1 )
 .model NPN NPN ( Is=1e-16 Bf=100 Br=1 Vaf=100 )
@@ -8,40 +8,33 @@
 .model PMOS PMOS ( Vto=-0.7 Kp=10u Lambda=0.02 )
 
 VCC vcc 0 5
-VEE vee 0 -5
-VIN in 0 0.7
 
-* Input bias network
-RIN in base 10k
-RB base 0 100k
-RE emit 0 2.2k
-I1 0 base 100u
+* Mid-rail bias for BJT base and MOS gates
+R1 vcc bias 10k
+R2 bias 0 10k
 
-* BJT common-emitter stage (C-B-E only)
-Q1 coll base emit NPN
+* NPN common-emitter (3-terminal)
+RE emit 0 330
+RC vcc coll 2.2k
+Q1 coll bias emit NPN
 
-* BJT with explicit substrate terminal (C-B-E-S)
-Q2 vcc base emit sub PNP
+* PNP high-side with substrate at vcc (4-terminal C-B-E-S)
+Q2 coll bias vcc sub PNP
 
-* Collector network
-RC vcc coll 4.7k
-RCE coll out 1Meg
+* Diode clamps (named models)
+D1 vcc coll DMOD
+D2 coll 0 DMOD
 
-* Diode clamp (with and without model)
-D1 vcc coll
-D2 coll vee DMOD
+* CMOS push-pull output (explicit bulk nodes)
+M1 out bias 0 0 NMOS
+M2 out bias vcc vcc PMOS
+RDR vcc out 4.7k
+Rsub sub vcc 10Meg
 
-* PMOS with explicit bulk terminal
-M1 out gate src vcc PMOS
-
-* NMOS with implicit bulk (= source)
-M2 out gate 0 NMOS
-
-* Passive storage and load
-C1 coll 0 1n
-L1 out 0 10u
-RLOAD out 0 1Meg
-COUT out 0 100p
+* Storage and load
+C1 coll 0 100p
+L1 out 0 1u
+RLOAD out 0 10k
 
 .OP
 .PRINT

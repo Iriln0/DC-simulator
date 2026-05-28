@@ -1,0 +1,12 @@
+---- DC Operating Point ----
+V(vdd) = 3.3
+V(vss) = 0
+V(in) = 1.65
+V(out) = 3.27845
+V(nmid) = 0.286582
+---- DC Print ----
+V(vdd) = 3.3
+V(vss) = 0
+V(in) = 1.65
+V(out) = 3.27845
+V(nmid) = 0.286582

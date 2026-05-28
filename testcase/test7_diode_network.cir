@@ -1,0 +1,23 @@
+* Test 7: Diode clamp and steering network
+* Multiple DMOD instances, dual supplies, resistive bias
+
+.model DMOD D ( Is=1e-14 N=1 )
+
+VCC vcc 0 5
+VEE vee 0 -5
+VIN in 0 2
+
+Rin in top 1k
+Rmid top mid 2.2k
+Rbot mid bot 3.3k
+Rload bot 0 4.7k
+
+D1 vcc top DMOD
+D2 top mid DMOD
+D3 mid bot DMOD
+D4 bot vee DMOD
+D5 in mid DMOD
+D6 vee mid DMOD
+
+.OP
+.PRINT

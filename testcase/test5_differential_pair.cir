@@ -1,0 +1,20 @@
+* Test 5: Dual-supply differential pair bias network (linear)
+* Tail current source, matched collector loads, GND reference
+
+VPP vdd 0 10
+VEE vee 0 -10
+VCM cm 0 1.5
+
+RC1 vdd out1 3.3k
+RC2 vdd out2 3.3k
+RE1 in1 tail 2.2k
+RE2 in2 tail 2.2k
+RT tail vee 1k
+Rcm1 cm in1 47k
+Rcm2 cm in2 47k
+Rload1 out1 0 10k
+Rload2 out2 0 10k
+Ibias 0 tail 1m
+
+.OP
+.PRINT

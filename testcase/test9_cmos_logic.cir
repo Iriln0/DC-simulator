@@ -1,0 +1,26 @@
+* Test 9: CMOS logic-style network
+* Explicit bulk ties, resistive input network
+
+.model NMOS NMOS ( Vto=0.7 Kp=50u Lambda=0.01 )
+.model PMOS PMOS ( Vto=-0.7 Kp=25u Lambda=0.01 )
+
+VDD vdd 0 3.3
+VSS vss 0 0
+VIN in 0 1.65
+
+Rpu vdd in 10k
+Rpd in vss 10k
+Rout vdd out 1k
+
+M1 out in vss vss NMOS
+M2 out in vdd vdd PMOS
+M3 nmid in vss vss NMOS
+M4 nmid in vdd vdd PMOS
+M5 out nmid vss vss NMOS
+M6 out nmid vdd vdd PMOS
+
+Rnmid nmid vss 10Meg
+Cload out vss 20p
+
+.OP
+.PRINT

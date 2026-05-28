@@ -1,0 +1,18 @@
+---- DC Operating Point ----
+V(vdd) = 10
+V(vee) = -10
+V(cm) = 1.5
+V(out1) = 7.5188
+V(out2) = 7.5188
+V(in1) = -8.13867
+V(tail) = -8.58984
+V(in2) = -8.13867
+---- DC Print ----
+V(vdd) = 10
+V(vee) = -10
+V(cm) = 1.5
+V(out1) = 7.5188
+V(out2) = 7.5188
+V(in1) = -8.13867
+V(tail) = -8.58984
+V(in2) = -8.13867
