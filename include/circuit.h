@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "../elements/element.h"
+#include "./model.h"
 
 enum class CommandType {
     Op,
@@ -42,10 +43,16 @@ public:
 
     const std::vector<Command> getCommands() const;
 
+    ModelLibrary& models();
+    const ModelLibrary& models() const;
+
+    bool validateModels() const;
+
     // 打印电路详细信息
     void print(std::ostream& os=std::cout) const;
 
 private:
     std::vector<Command> commands;
     std::vector<std::unique_ptr<Element>> elements;
+    ModelLibrary _models;
 };

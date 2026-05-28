@@ -1,4 +1,4 @@
-#include "node_map.h"
+#include "../include/node_map.h"
 
 #include <stdexcept>
 
@@ -21,6 +21,7 @@ void NodeMap::buildFromCircuit(const Circuit& circuit){
         for(auto& n: elem->getNodes()){
             if(n != "0" && n != "GND" && !name_to_idx.count(n)){
                 name_to_idx[n] = static_cast<int>(name_to_idx.size());
+                idx_to_name.push_back(n);
             }
         }
     }
@@ -28,4 +29,8 @@ void NodeMap::buildFromCircuit(const Circuit& circuit){
 
 int NodeMap::nodeCount() const {
     return static_cast<int>(name_to_idx.size());
+}
+
+const std::vector<std::string>& NodeMap::nodeNameByIdx() const {
+    return idx_to_name;
 }

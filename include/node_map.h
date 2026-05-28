@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 #include "./circuit.h"
@@ -12,6 +13,9 @@ class NodeMap{
 
     int nodeCount() const;
 
+    const std::vector<std::string>& nodeNameByIdx() const;
+
     private:
     std::unordered_map<std::string,int> name_to_idx;
+    std::vector<std::string> idx_to_name;
 };

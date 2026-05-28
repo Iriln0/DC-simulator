@@ -1,4 +1,4 @@
-#include "dc_solver.h"
+#include "../include/dc_solver.h"
 
 bool DcSolver::solve(Circuit& circuit, std::ostream& os) {
     (void)os;

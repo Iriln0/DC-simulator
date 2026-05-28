@@ -14,6 +14,10 @@ public:
     bool parse(Circuit& circuit);
 
 private:
+    bool parseModels(Circuit& circuit);
+    bool parseElements(Circuit& circuit);
+    bool isDotModelLine(const std::string& line) const;
+
     std::ifstream file;
     std::string filename;
 };

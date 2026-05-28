@@ -1,4 +1,4 @@
-#include "parser.h"
+#include "../include/parser.h"
 
 #include <iostream>
 #include <memory>
@@ -23,88 +23,111 @@ Parser::~Parser(){
     file.close();
 }
 
-// bool flag: 是否解析成功
-bool Parser::parse(Circuit& circuit){
-    if(!file.is_open()){
-        std::cerr << "Can not open file <" << filename << ">!" << std::endl;
+bool Parser::isDotModelLine(const std::string& line) const {
+    std::stringstream iss(line);
+    std::string token;
+    if (!(iss >> token)) {
         return false;
     }
+    return equals_ignore_case(token, ".model");
+}
 
+bool Parser::parseModels(Circuit& circuit) {
     std::string line;
-    std::getline(file, line);           // 第一行默认为注释
-    while(std::getline(file, line)){
-        line = trim(line);              // 去掉首尾空白
-        if(line.empty()) continue;      // 忽略空行
-        if(line.at(0)=='*') continue;   // 忽略注释行
+    std::getline(file, line);
+
+    while (std::getline(file, line)) {
+        line = trim(line);
+        if (line.empty()) {
+            continue;
+        }
+        if (line.at(0) == '*') {
+            continue;
+        }
+        if (isDotModelLine(line) && !circuit.models().parseLine(line)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool Parser::parseElements(Circuit& circuit) {
+    std::string line;
+    std::getline(file, line);
+
+    while (std::getline(file, line)) {
+        line = trim(line);
+        if (line.empty()) {
+            continue;
+        }
+        if (line.at(0) == '*') {
+            continue;
+        }
+        if (isDotModelLine(line)) {
+            continue;
+        }
 
         std::stringstream iss(line);
 
         std::string element_name;
         iss >> element_name;
 
-        if(element_name.at(0) == '.'){
-            if(element_name == ".OP"){
+        if (element_name.at(0) == '.') {
+            if (element_name == ".OP") {
                 circuit.addCommand(Command{CommandType::Op});
-            }
-            else if(element_name == ".PRINT"){
+            } else if (element_name == ".PRINT") {
                 circuit.addCommand(Command{CommandType::Print});
-            }
-            else{
+            } else {
                 std::cerr << "Unknown command: " << line << std::endl;
                 return false;
             }
-        }
-        else if(element_name.at(0) == 'R'){
+        } else if (element_name.at(0) == 'R') {
             std::string node1, node2, str_value;
             iss >> node1 >> node2 >> str_value;
             double value = parse_value(str_value);
-            if(value == -1){
+            if (value == -1) {
                 std::cerr << "Wrong value: " << str_value << std::endl;
                 return false;
             }
             circuit.addElement(std::make_unique<Resistor>(element_name, node1, node2, value));
-        }
-        else if(element_name.at(0) == 'L'){
+        } else if (element_name.at(0) == 'L') {
             std::string node1, node2, str_value;
             iss >> node1 >> node2 >> str_value;
             double value = parse_value(str_value);
-            if(value == -1){
+            if (value == -1) {
                 std::cerr << "Wrong value: " << str_value << std::endl;
                 return false;
             }
             circuit.addElement(std::make_unique<Inductor>(element_name, node1, node2, value));
-        }
-        else if(element_name.at(0) == 'C'){
+        } else if (element_name.at(0) == 'C') {
             std::string node1, node2, str_value;
             iss >> node1 >> node2 >> str_value;
             double value = parse_value(str_value);
-            if(value == -1){
+            if (value == -1) {
                 std::cerr << "Wrong value: " << str_value << std::endl;
                 return false;
             }
             circuit.addElement(std::make_unique<Capacitor>(element_name, node1, node2, value));
-        }
-        else if(element_name.at(0) == 'V'){
+        } else if (element_name.at(0) == 'V') {
             std::string node1, node2, str_value;
             iss >> node1 >> node2 >> str_value;
             double value = parse_value(str_value);
-            if(value == -1){
+            if (value == -1) {
                 std::cerr << "Wrong value: " << str_value << std::endl;
                 return false;
             }
             circuit.addElement(std::make_unique<VoltageSource>(element_name, node1, node2, value));
-        }
-        else if(element_name.at(0) == 'I'){
+        } else if (element_name.at(0) == 'I') {
             std::string node1, node2, str_value;
             iss >> node1 >> node2 >> str_value;
             double value = parse_value(str_value);
-            if(value == -1){
+            if (value == -1) {
                 std::cerr << "Wrong value: " << str_value << std::endl;
                 return false;
             }
             circuit.addElement(std::make_unique<CurrentSource>(element_name, node1, node2, value));
-        }
-        else if(element_name.at(0) == 'D'){
+        } else if (element_name.at(0) == 'D') {
             std::string anode, cathode, model;
             iss >> anode >> cathode;
             if (iss >> model) {
@@ -114,8 +137,7 @@ bool Parser::parse(Circuit& circuit){
                 circuit.addElement(
                     std::make_unique<Diode>(element_name, anode, cathode));
             }
-        }
-        else if(element_name.at(0) == 'Q'){
+        } else if (element_name.at(0) == 'Q') {
             std::string collector, base, emitter, tok4, tok5;
             iss >> collector >> base >> emitter >> tok4;
             if (iss >> tok5) {
@@ -125,8 +147,7 @@ bool Parser::parse(Circuit& circuit){
                 circuit.addElement(std::make_unique<BJT>(
                     element_name, collector, base, emitter, tok4));
             }
-        }
-        else if(element_name.at(0) == 'M'){
+        } else if (element_name.at(0) == 'M') {
             std::string drain, gate, source, tok4, tok5;
             iss >> drain >> gate >> source >> tok4;
             if (iss >> tok5) {
@@ -136,11 +157,40 @@ bool Parser::parse(Circuit& circuit){
                 circuit.addElement(std::make_unique<MOSFET>(
                     element_name, drain, gate, source, source, tok4));
             }
-        }
-        else{
+        } else {
             std::cerr << "Unknown element: " << line << std::endl;
             return false;
         }
+    }
+
+    return true;
+}
+
+bool Parser::parse(Circuit& circuit) {
+    if (!file.is_open()) {
+        std::cerr << "Can not open file <" << filename << ">!" << std::endl;
+        return false;
+    }
+
+    if (!parseModels(circuit)) {
+        return false;
+    }
+
+    circuit.models().installBuiltinDefaults();
+
+    file.clear();
+    file.seekg(0);
+    if (!file) {
+        std::cerr << "Failed to rewind netlist file" << std::endl;
+        return false;
+    }
+
+    if (!parseElements(circuit)) {
+        return false;
+    }
+
+    if (!circuit.validateModels()) {
+        return false;
     }
 
     return true;

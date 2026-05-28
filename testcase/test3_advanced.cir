@@ -1,6 +1,12 @@
 * Test 3: Mixed linear and nonlinear circuit
 * Validates D, Q, M devices, model names, optional terminals, and all commands
 
+.model DMOD D ( Is=1e-14 N=1 )
+.model NPN NPN ( Is=1e-16 Bf=100 Br=1 Vaf=100 )
+.model PNP PNP ( Is=1e-16 Bf=50 Br=2 Vaf=80 )
+.model NMOS NMOS ( Vto=0.7 Kp=20u Lambda=0.02 )
+.model PMOS PMOS ( Vto=-0.7 Kp=10u Lambda=0.02 )
+
 VCC vcc 0 5
 VEE vee 0 -5
 VIN in 0 0.7
