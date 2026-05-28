@@ -170,16 +170,19 @@ void Matrix::multiply(std::vector<double>& y, const std::vector<double>& x) cons
 }
 
 bool Matrix::solve(std::vector<double>& x, const std::vector<double>& b) const {
-    (void)x;
-    (void)b;
-
     /**
-     * @todo
      * Partial-pivoting solve for A * x = b (A = *this).
      * Copy A, run luDecomposePartialPivot + luSolvePartialPivot on the copy,
      * or equivalent partial-pivot Gaussian elimination in one pass.
      */
-    return false;
+
+    Matrix temp(*this);
+    if(!temp.luDecomposePartialPivot()){
+        return false;
+    }
+    return temp.luSolvePartialPivot(x,b);
+    
+    return true;
 }
 
 bool Matrix::luDecomposePartialPivot() {
@@ -215,15 +218,35 @@ bool Matrix::luDecomposePartialPivot() {
 }
 
 bool Matrix::luSolvePartialPivot(std::vector<double>& x, const std::vector<double>& b) const {
-    (void)x;
-    (void)b;
-
     /**
-     * @todo
      * Solve using PLU from luDecomposePartialPivot(); apply _pivot to b first.
      * Requires isFactorized() == true.
      */
-    return false;
+
+    if(!isFactorized()){
+        return false;
+    }
+
+    // 对 b 进行重排操作
+    x.resize(b.size());
+    for(size_t i = 0; i < b.size(); ++i){
+        x[i] = b[_pivot[i]];
+    }
+
+    // forward: Ly = b
+    for(size_t i = 0; i < x.size(); ++i){
+        for(size_t j = 0; j < i; ++j){
+            x[i] -= x[j] * this->at(i,j);
+        }
+    }
+
+    // backward: Ux = y
+    for(int i = x.size() - 1; i >= 0; --i){
+        for(int j = x.size() - 1; j > i; --j){
+            x[i] -= x[j] * this->at(i,j);
+        }
+        x[i] = x[i]/this->at(i,i);
+    }
 }
 
 std::size_t Matrix::findPivotRow(std::size_t step) const {
