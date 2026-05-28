@@ -46,6 +46,9 @@ private:
      */
     bool printOpResults(const Circuit& circuit, std::ostream& os) const;
 
+    static bool isGroundNode(const std::string& node);
+    static bool hasReferenceGround(Circuit& circuit);
+
     NodeMap nodeMap;
     Matrix jacobian;
     std::vector<double> rhs;

@@ -17,7 +17,7 @@ test: $(TARGET)
 		echo "======= Running $$f ======="; \
 		./$(TARGET) $$f testoutput/$$base.out; \
 	done
-	echo "Test Completed";
+	@echo "Test Completed";
 
 clean: 
 	rm -f $(TARGET)

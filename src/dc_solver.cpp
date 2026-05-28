@@ -146,6 +146,11 @@ bool DcSolver::printOpResults(const Circuit& circuit, std::ostream& os) const {
 }
 
 bool DcSolver::solve(Circuit& circuit, std::ostream& os) {
+    if(!hasReferenceGround(circuit)){
+        std::cerr << "No reference node(0 or GND) in the Netlist" << std::endl;
+        return false;
+    }
+
     if (!buildMnaSystem(circuit)) {
         return false;
     }
@@ -163,4 +168,23 @@ bool DcSolver::solve(Circuit& circuit, std::ostream& os) {
     }
 
     return printOpResults(circuit, os);
+}
+
+bool DcSolver::isGroundNode(const std::string& node){
+    if(node == "0" || node == "GND"){
+        return true;
+    }
+
+    return false;
+}
+
+bool DcSolver::hasReferenceGround(Circuit& circuit){
+    for(auto& element: circuit.getElements()){
+        for(auto& node: element->getNodes()){
+            if(isGroundNode(node)){
+                return true;
+            }
+        }
+    }
+    return false;
 }

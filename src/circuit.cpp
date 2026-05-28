@@ -9,7 +9,7 @@ const char* commandTypeName(CommandType type){
         default: return "Unknown";
     }
     return "Unknown";
-}
+}   
 
 bool Circuit::empty() const {
     return elements.empty();
