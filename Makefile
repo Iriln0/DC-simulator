@@ -1,6 +1,6 @@
 CXX = g++
 CXX_FLAGS = -std=c++17 -Wall -Wextra -I./include -I./elements
-SRC = $(wildcard ./src/*.cpp) $(wildcard ./elements/src/*.cpp)
+SRC = $(wildcard ./src/*.cpp) $(wildcard ./elements/*.cpp)
 TARGET = spice
 
 TESTCASES = $(wildcard ./testcase/*.cir)
