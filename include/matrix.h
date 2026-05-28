@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <iostream>
 #include <vector>
 
 // 基于 std::vector<std::vector<double>> 的稠密矩阵，供 MNA / Newton 迭代使用。
@@ -23,10 +24,17 @@ public:
     void setZero();
     void setIdentity();
 
+    /** MNA stamp：对 (row,col) 累加 value。 */
     void add(std::size_t row, std::size_t col, double value);
 
     const std::vector<std::vector<double>>& data() const;
     std::vector<std::vector<double>>& data();
+
+    Matrix clone() const;
+    void copyFrom(const Matrix& other);
+
+    /** 方阵且 b 长度等于 rows() 时方可 solve / luSolve。 */
+    bool canSolve(const std::vector<double>& b) const;
 
     /** 稠密矩阵乘法：result = A * B。 */
     static void multiply(Matrix& result, const Matrix& A, const Matrix& B);
@@ -35,44 +43,57 @@ public:
     void multiply(std::vector<double>& y, const std::vector<double>& x) const;
 
     /**
-     * @todo 部分选主元求解 A * x = b（A 为方阵的副本，不破坏原矩阵）。
-     * MNA 中 A 为方阵；矩形最小二乘等需 QR，不在此接口范围。
-     * b.size() 须等于 rows()；奇异时返回 false。
+     * 部分选主元求解 A * x = b（在副本上分解，不修改 *this）。
+     * 要求方阵且 b.size() == rows()。
      */
     bool solve(std::vector<double>& x, const std::vector<double>& b) const;
 
-    /**
-     * @todo 对 m×n 矩阵做带部分选主元的 LUP 分解：PA = LU。
-     * - P 为 m×m 行置换；L 为 m×min(m,n) 单位下三角（梯形）；U 为 min(m,n)×n 上三角（梯形）。
-     * - 共 min(m-1, n) 步选主元与消元（n 阶方阵为 n-1 步）；分解结果覆写在 *this。
-     * - _pivot 长度 m，初始 [0,1,...,m-1]，换行时同步交换。
-     * 空矩阵或主元过小时返回 false。
-     */
+    /** 对 m×n 矩阵做部分选主元 LUP：PA = LU，结果覆写在 *this。 */
     bool luDecomposePartialPivot();
 
-    /**
-     * @todo 在 luDecomposePartialPivot() 成功后求解（视形状而定）：
-     * - 方阵：A * x = b；
-     * - 超定 m>n：最小二乘意义下的解（若实现）；
-     * - 欠定 m<n：特解（若实现）。
-     * 对 b 按 pivot 重排后前代、回代。
-     */
+    /** 在 luDecomposePartialPivot() 成功后求解 A * x = b（方阵）。 */
     bool luSolvePartialPivot(std::vector<double>& x, const std::vector<double>& b) const;
 
-    /** 是否已完成部分选主元 LU 分解（可供 luSolvePartialPivot 使用）。 */
     bool isFactorized() const;
-
-    /** 行置换表 pivot，长度 rows()；初始 [0,1,...,m-1]，换行时同步交换。 */
     const std::vector<std::size_t>& pivotPermutation() const;
+
+    /** r = (*this) * x - b，用于 Newton 收敛判据。 */
+    bool computeResidual(std::vector<double>& residual, const std::vector<double>& x,
+                         const std::vector<double>& b) const;
+
+    /** max_i |v[i]| */
+    static double vectorNormInf(const std::vector<double>& v);
+
+    /** y += alpha * x */
+    static void addScaled(std::vector<double>& y, const std::vector<double>& x, double alpha);
+
+    /** x += dx（可选阻尼：x += damping * dx） */
+    static void accumulate(std::vector<double>& x, const std::vector<double>& dx,
+                           double damping = 1.0);
+
+    void print(std::ostream& os = std::cout, int precision = 6) const;
+
+    /**
+     * @todo 估计矩阵条件数（如基于 LU 或 ∞-范数），用于病态检测。
+     */
+    bool estimateConditionNumber(double& condOut) const;
+
+    /**
+     * @todo 迭代 refinement：在已有 LU 分解基础上提高 Ax=b 的精度。
+     */
+    bool solveRefined(std::vector<double>& x, const std::vector<double>& b, int maxSteps = 1) const;
 
 private:
     void invalidateFactorization();
     void initPivotPermutation();
-    /** LUP 消元/选主元步数：min(rows()-1, cols())；n 阶方阵为 n-1 */
     std::size_t luStepCount() const;
     std::size_t findPivotRow(std::size_t step) const;
     void swapRows(std::size_t r1, std::size_t r2);
-    static bool isPivotTooSmall(double pivot, double tolerance=1e-12);
+
+    /** 第 step 步：在主元已就位后消去其下方（LUP 内层，由 luDecomposePartialPivot 调用）。 */
+    bool eliminateBelowPivot(std::size_t step);
+
+    static bool isPivotTooSmall(double pivot, double tolerance = 1e-12);
 
     std::vector<std::vector<double>> _data;
     std::vector<std::size_t> _pivot;

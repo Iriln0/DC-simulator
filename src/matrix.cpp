@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 #include <stdexcept>
 
 Matrix::Matrix(std::size_t rows, std::size_t cols, double fill) {
@@ -65,6 +66,20 @@ std::size_t Matrix::luStepCount() const {
     return std::min(rows() - 1, cols());
 }
 
+Matrix Matrix::clone() const {
+    return Matrix(*this);
+}
+
+void Matrix::copyFrom(const Matrix& other) {
+    _data = other._data;
+    _pivot = other._pivot;
+    _factorized = other._factorized;
+}
+
+bool Matrix::canSolve(const std::vector<double>& b) const {
+    return isSquare() && b.size() == rows();
+}
+
 double& Matrix::at(std::size_t row, std::size_t col) {
     if (row >= rows() || col >= cols()) {
         throw std::out_of_range("Matrix index out of range");
@@ -99,6 +114,9 @@ void Matrix::setIdentity() {
 }
 
 void Matrix::add(std::size_t row, std::size_t col, double value) {
+    if (value == 0.0) {
+        return;
+    }
     at(row, col) += value;
 }
 
@@ -111,78 +129,133 @@ std::vector<std::vector<double>>& Matrix::data() {
 }
 
 void Matrix::multiply(Matrix& result, const Matrix& A, const Matrix& B) {
-    if(A.empty() || B.empty()){
+    if (A.empty() || B.empty()) {
         throw std::invalid_argument("Matrix multiplication: empty matrix");
     }
-    
-    if(A.cols() != B.rows()){
+
+    if (A.cols() != B.rows()) {
         throw std::invalid_argument("Dimensions do not match");
     }
 
-    if(&result == &A || &result == &B){
+    if (&result == &A || &result == &B) {
         Matrix tmp;
         multiply(tmp, A, B);
         result = std::move(tmp);
         return;
     }
 
-    std::size_t r = A.rows();
-    std::size_t c = B.cols();
-    std::size_t t = A.cols();
+    const std::size_t r = A.rows();
+    const std::size_t c = B.cols();
+    const std::size_t t = A.cols();
 
     result.resize(r, c);
-    for(size_t i = 0; i < r; ++i){
-        for(size_t j = 0; j < c; ++j){
+    for (std::size_t i = 0; i < r; ++i) {
+        for (std::size_t j = 0; j < c; ++j) {
             double sum = 0.0;
-            for(size_t k = 0; k < t; ++k){
-                sum += A.at(i,k) * B.at(k,j);
+            for (std::size_t k = 0; k < t; ++k) {
+                sum += A.at(i, k) * B.at(k, j);
             }
-            result.at(i,j) = sum;
+            result.at(i, j) = sum;
         }
     }
 }
 
 void Matrix::multiply(std::vector<double>& y, const std::vector<double>& x) const {
-    if(this->empty() || x.empty()){
+    if (empty() || x.empty()) {
         throw std::invalid_argument("Matrix multiply vector: empty matrix or vector");
     }
 
-    if(this->cols() != x.size()){
+    if (cols() != x.size()) {
         throw std::invalid_argument("Dimensions do not match");
     }
 
-    if(&y == &x){
+    if (&y == &x) {
         std::vector<double> tmp;
         multiply(tmp, x);
         y = std::move(tmp);
         return;
     }
 
-    size_t col = this->rows();
-    y.resize(col);
-    for(size_t i = 0; i < col; ++i){
+    const std::size_t m = rows();
+    y.resize(m);
+    for (std::size_t i = 0; i < m; ++i) {
         double sum = 0.0;
-        for(size_t j = 0; j < x.size(); ++j){
-            sum += this->at(i,j) * x[j];
+        for (std::size_t j = 0; j < x.size(); ++j) {
+            sum += at(i, j) * x[j];
         }
         y[i] = sum;
     }
 }
 
-bool Matrix::solve(std::vector<double>& x, const std::vector<double>& b) const {
-    /**
-     * Partial-pivoting solve for A * x = b (A = *this).
-     * Copy A, run luDecomposePartialPivot + luSolvePartialPivot on the copy,
-     * or equivalent partial-pivot Gaussian elimination in one pass.
-     */
-
-    Matrix temp(*this);
-    if(!temp.luDecomposePartialPivot()){
+bool Matrix::computeResidual(std::vector<double>& residual, const std::vector<double>& x,
+                             const std::vector<double>& b) const {
+    if (!canSolve(b) || x.size() != b.size()) {
         return false;
     }
-    return temp.luSolvePartialPivot(x,b);
-    
+
+    multiply(residual, x);
+    if (residual.size() != b.size()) {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < b.size(); ++i) {
+        residual[i] -= b[i];
+    }
     return true;
+}
+
+double Matrix::vectorNormInf(const std::vector<double>& v) {
+    double maxAbs = 0.0;
+    for (double value : v) {
+        maxAbs = std::max(maxAbs, std::abs(value));
+    }
+    return maxAbs;
+}
+
+void Matrix::addScaled(std::vector<double>& y, const std::vector<double>& x, double alpha) {
+    if (y.size() != x.size()) {
+        throw std::invalid_argument("addScaled: vector size mismatch");
+    }
+    for (std::size_t i = 0; i < y.size(); ++i) {
+        y[i] += alpha * x[i];
+    }
+}
+
+void Matrix::accumulate(std::vector<double>& x, const std::vector<double>& dx, double damping) {
+    if (x.size() != dx.size()) {
+        throw std::invalid_argument("accumulate: vector size mismatch");
+    }
+    for (std::size_t i = 0; i < x.size(); ++i) {
+        x[i] += damping * dx[i];
+    }
+}
+
+void Matrix::print(std::ostream& os, int precision) const {
+    os << "Matrix " << rows() << " x " << cols();
+    if (_factorized) {
+        os << " (factorized)";
+    }
+    os << "\n";
+    os << std::scientific << std::setprecision(precision);
+    for (std::size_t i = 0; i < rows(); ++i) {
+        for (std::size_t j = 0; j < cols(); ++j) {
+            os << at(i, j) << " ";
+        }
+        os << "\n";
+    }
+    os << std::defaultfloat;
+}
+
+bool Matrix::solve(std::vector<double>& x, const std::vector<double>& b) const {
+    if (!canSolve(b)) {
+        return false;
+    }
+
+    Matrix temp(*this);
+    if (!temp.luDecomposePartialPivot()) {
+        return false;
+    }
+    return temp.luSolvePartialPivot(x, b);
 }
 
 bool Matrix::luDecomposePartialPivot() {
@@ -203,13 +276,10 @@ bool Matrix::luDecomposePartialPivot() {
         if (p_row != step) {
             swapRows(step, p_row);
         }
-        double pivot = this->at(step,step);
-        for(size_t i = step+1; i < this->rows(); ++i){
-            double lambda = this->at(i,step)/pivot;
-            for(size_t j = step+1; j < this->cols(); ++j){
-                this->at(i,j) += -lambda*this->at(step,j);
-            }
-            this->at(i,step) = lambda;
+
+        if (!eliminateBelowPivot(step)) {
+            invalidateFactorization();
+            return false;
         }
     }
 
@@ -217,62 +287,108 @@ bool Matrix::luDecomposePartialPivot() {
     return true;
 }
 
-bool Matrix::luSolvePartialPivot(std::vector<double>& x, const std::vector<double>& b) const {
-    /**
-     * Solve using PLU from luDecomposePartialPivot(); apply _pivot to b first.
-     * Requires isFactorized() == true.
-     */
-
-    if(!isFactorized()){
+bool Matrix::eliminateBelowPivot(std::size_t step) {
+    const double pivot = at(step, step);
+    if (isPivotTooSmall(std::abs(pivot))) {
         return false;
     }
 
-    // 对 b 进行重排操作
+    for (std::size_t i = step + 1; i < rows(); ++i) {
+        const double lambda = at(i, step) / pivot;
+        for (std::size_t j = step + 1; j < cols(); ++j) {
+            at(i, j) -= lambda * at(step, j);
+        }
+        at(i, step) = lambda;
+    }
+    return true;
+}
+
+bool Matrix::luSolvePartialPivot(std::vector<double>& x, const std::vector<double>& b) const {
+    if (!isFactorized() || !canSolve(b)) {
+        return false;
+    }
+
+    if (_pivot.size() != rows()) {
+        return false;
+    }
+
     x.resize(b.size());
-    for(size_t i = 0; i < b.size(); ++i){
+    for (std::size_t i = 0; i < b.size(); ++i) {
         x[i] = b[_pivot[i]];
     }
 
-    // forward: Ly = b
-    for(size_t i = 0; i < x.size(); ++i){
-        for(size_t j = 0; j < i; ++j){
-            x[i] -= x[j] * this->at(i,j);
+    // forward: Ly = Pb
+    for (std::size_t i = 0; i < x.size(); ++i) {
+        for (std::size_t j = 0; j < i; ++j) {
+            x[i] -= x[j] * at(i, j);
         }
     }
 
     // backward: Ux = y
-    for(int i = x.size() - 1; i >= 0; --i){
-        for(int j = x.size() - 1; j > i; --j){
-            x[i] -= x[j] * this->at(i,j);
-        }
-        x[i] = x[i]/this->at(i,i);
+    if (x.empty()) {
+        return false;
     }
+
+    for (int i = static_cast<int>(x.size()) - 1; i >= 0; --i) {
+        for (int j = static_cast<int>(x.size()) - 1; j > i; --j) {
+            x[static_cast<std::size_t>(i)] -= x[static_cast<std::size_t>(j)] *
+                                               at(static_cast<std::size_t>(i),
+                                                  static_cast<std::size_t>(j));
+        }
+        const double diag = at(static_cast<std::size_t>(i), static_cast<std::size_t>(i));
+        if (isPivotTooSmall(std::abs(diag))) {
+            return false;
+        }
+        x[static_cast<std::size_t>(i)] /= diag;
+    }
+
+    return true;
 }
 
 std::size_t Matrix::findPivotRow(std::size_t step) const {
-    size_t idx = step;  // 主元的行索引
-    double max_val = std::abs(this->at(step, step));    //主元值(in absolute value)
-    for(std::size_t i = step+1; i < this->rows(); ++i){
-        double cur_val = std::abs(this->at(i, step));
-        if(cur_val > max_val){
+    std::size_t idx = step;
+    double maxVal = std::abs(at(step, step));
+    for (std::size_t i = step + 1; i < rows(); ++i) {
+        const double curVal = std::abs(at(i, step));
+        if (curVal > maxVal) {
             idx = i;
-            max_val = cur_val;
+            maxVal = curVal;
         }
     }
     return idx;
 }
 
-void Matrix::swapRows(std::size_t r1, std::size_t r2){
+void Matrix::swapRows(std::size_t r1, std::size_t r2) {
+    if (r1 == r2) {
+        return;
+    }
     std::swap(_pivot[r1], _pivot[r2]);
-    
-    std::vector<double> tmp = _data[r1];
-    _data[r1] = std::move(_data[r2]);
-    _data[r2] = std::move(tmp);
+    std::swap(_data[r1], _data[r2]);
 }
 
-bool Matrix::isPivotTooSmall(double pivot, double tolerance){
-    if(std::abs(pivot) < tolerance){
-        return true;
-    }
+bool Matrix::isPivotTooSmall(double pivot, double tolerance) {
+    return std::abs(pivot) < tolerance;
+}
+
+bool Matrix::estimateConditionNumber(double& condOut) const {
+    (void)condOut;
+
+    /**
+     * @todo
+     * Estimate condition number (e.g. ||A||_inf * ||A^{-1}||_inf via LU).
+     */
+    return false;
+}
+
+bool Matrix::solveRefined(std::vector<double>& x, const std::vector<double>& b,
+                          int maxSteps) const {
+    (void)x;
+    (void)b;
+    (void)maxSteps;
+
+    /**
+     * @todo
+     * Iterative refinement for Ax=b using existing LU factors.
+     */
     return false;
 }
