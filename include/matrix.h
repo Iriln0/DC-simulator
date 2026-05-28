@@ -24,7 +24,7 @@ public:
     void setZero();
     void setIdentity();
 
-    /** MNA stamp：对 (row,col) 累加 value。 */
+    /** MNA stamp：对 (row,col) 累加 value；会失效已有 LU 分解。 */
     void add(std::size_t row, std::size_t col, double value);
 
     const std::vector<std::vector<double>>& data() const;
@@ -43,8 +43,13 @@ public:
     void multiply(std::vector<double>& y, const std::vector<double>& x) const;
 
     /**
-     * 部分选主元求解 A * x = b（在副本上分解，不修改 *this）。
-     * 要求方阵且 b.size() == rows()。
+     * 部分选主元求解 A * x = b，在 *this 上原地分解（覆写矩阵为 LU）。
+     * Newton 每轮重新组装后应优先使用本函数，避免整表拷贝。
+     */
+    bool solveInPlace(std::vector<double>& x, const std::vector<double>& b);
+
+    /**
+     * 求解 A * x = b：在副本上分解，不修改 *this 中的原始系数。
      */
     bool solve(std::vector<double>& x, const std::vector<double>& b) const;
 
@@ -64,6 +69,9 @@ public:
     /** max_i |v[i]| */
     static double vectorNormInf(const std::vector<double>& v);
 
+    /** 矩阵 ∞-范数：max_i sum_j |a_ij|。 */
+    static double matrixNormInf(const Matrix& matrix);
+
     /** y += alpha * x */
     static void addScaled(std::vector<double>& y, const std::vector<double>& x, double alpha);
 
@@ -74,14 +82,16 @@ public:
     void print(std::ostream& os = std::cout, int precision = 6) const;
 
     /**
-     * @todo 估计矩阵条件数（如基于 LU 或 ∞-范数），用于病态检测。
+     * 估计 cond_inf(A) ≈ ||A||_inf * ||A^{-1}||_inf（分别用行和与 n 次 LU 回代）。
+     * 须在未分解状态下调用（setZero/stamp 后、luDecompose 前）。
      */
     bool estimateConditionNumber(double& condOut) const;
 
     /**
-     * @todo 迭代 refinement：在已有 LU 分解基础上提高 Ax=b 的精度。
+     * 原地 LU + 迭代 refinement：保存分解前系数，用 r = Ax-b 修正 x。
+     * 须在未分解状态下调用；分解后 *this 为 LU 因子。
      */
-    bool solveRefined(std::vector<double>& x, const std::vector<double>& b, int maxSteps = 1) const;
+    bool solveRefined(std::vector<double>& x, const std::vector<double>& b, int maxSteps = 1);
 
 private:
     void invalidateFactorization();
@@ -92,6 +102,9 @@ private:
 
     /** 第 step 步：在主元已就位后消去其下方（LUP 内层，由 luDecomposePartialPivot 调用）。 */
     bool eliminateBelowPivot(std::size_t step);
+
+    /** 已分解时：||A^{-1}||_inf ≈ max_j ||A^{-1} e_j||_inf。 */
+    double estimateInverseNormInf() const;
 
     static bool isPivotTooSmall(double pivot, double tolerance = 1e-12);
 

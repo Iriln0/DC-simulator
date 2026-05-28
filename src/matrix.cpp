@@ -246,16 +246,25 @@ void Matrix::print(std::ostream& os, int precision) const {
     os << std::defaultfloat;
 }
 
+bool Matrix::solveInPlace(std::vector<double>& x, const std::vector<double>& b) {
+    if (!canSolve(b)) {
+        return false;
+    }
+
+    if (!luDecomposePartialPivot()) {
+        return false;
+    }
+
+    return luSolvePartialPivot(x, b);
+}
+
 bool Matrix::solve(std::vector<double>& x, const std::vector<double>& b) const {
     if (!canSolve(b)) {
         return false;
     }
 
     Matrix temp(*this);
-    if (!temp.luDecomposePartialPivot()) {
-        return false;
-    }
-    return temp.luSolvePartialPivot(x, b);
+    return temp.solveInPlace(x, b);
 }
 
 bool Matrix::luDecomposePartialPivot() {
@@ -370,25 +379,113 @@ bool Matrix::isPivotTooSmall(double pivot, double tolerance) {
     return std::abs(pivot) < tolerance;
 }
 
-bool Matrix::estimateConditionNumber(double& condOut) const {
-    (void)condOut;
+double Matrix::matrixNormInf(const Matrix& matrix) {
+    if (matrix.empty()) {
+        return 0.0;
+    }
 
-    /**
-     * @todo
-     * Estimate condition number (e.g. ||A||_inf * ||A^{-1}||_inf via LU).
-     */
-    return false;
+    double normA = 0.0;
+    for (std::size_t i = 0; i < matrix.rows(); ++i) {
+        double rowSum = 0.0;
+        for (std::size_t j = 0; j < matrix.cols(); ++j) {
+            rowSum += std::abs(matrix.at(i, j));
+        }
+        normA = std::max(normA, rowSum);
+    }
+    return normA;
 }
 
-bool Matrix::solveRefined(std::vector<double>& x, const std::vector<double>& b,
-                          int maxSteps) const {
-    (void)x;
-    (void)b;
-    (void)maxSteps;
+double Matrix::estimateInverseNormInf() const {
+    if (!isFactorized() || !isSquare() || empty()) {
+        return 0.0;
+    }
 
-    /**
-     * @todo
-     * Iterative refinement for Ax=b using existing LU factors.
-     */
-    return false;
+    const std::size_t n = rows();
+    std::vector<double> e(n, 0.0);
+    std::vector<double> col(n, 0.0);
+    double normInv = 0.0;
+
+    for (std::size_t j = 0; j < n; ++j) {
+        std::fill(e.begin(), e.end(), 0.0);
+        e[j] = 1.0;
+        if (!luSolvePartialPivot(col, e)) {
+            return 0.0;
+        }
+        normInv = std::max(normInv, vectorNormInf(col));
+    }
+
+    return normInv;
+}
+
+bool Matrix::estimateConditionNumber(double& condOut) const {
+    if (!isSquare() || empty()) {
+        return false;
+    }
+
+    if (_factorized) {
+        return false;
+    }
+
+    const double normA = matrixNormInf(*this);
+    if (normA == 0.0) {
+        condOut = 0.0;
+        return true;
+    }
+
+    Matrix lu(*this);
+    if (!lu.luDecomposePartialPivot()) {
+        return false;
+    }
+
+    const double normInvA = lu.estimateInverseNormInf();
+    if (normInvA == 0.0) {
+        return false;
+    }
+
+    condOut = normA * normInvA;
+    return std::isfinite(condOut);
+}
+
+bool Matrix::solveRefined(std::vector<double>& x, const std::vector<double>& b, int maxSteps) {
+    if (!canSolve(b) || maxSteps < 1) {
+        return false;
+    }
+
+    if (_factorized) {
+        return false;
+    }
+
+    const Matrix original(*this);
+    if (!luDecomposePartialPivot()) {
+        return false;
+    }
+
+    if (!luSolvePartialPivot(x, b)) {
+        return false;
+    }
+
+    std::vector<double> residual;
+    std::vector<double> correction;
+
+    for (int step = 0; step < maxSteps; ++step) {
+        if (!original.computeResidual(residual, x, b)) {
+            return false;
+        }
+
+        const double residualNorm = vectorNormInf(residual);
+        const double scale = std::max(vectorNormInf(b), 1.0);
+        if (residualNorm <= 1e-15 * scale) {
+            break;
+        }
+
+        if (!luSolvePartialPivot(correction, residual)) {
+            return false;
+        }
+
+        for (std::size_t i = 0; i < x.size(); ++i) {
+            x[i] -= correction[i];
+        }
+    }
+
+    return true;
 }

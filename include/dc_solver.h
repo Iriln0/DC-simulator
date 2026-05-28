@@ -25,7 +25,32 @@ private:
     int voltageSourceEqIndex(int vsOrdinal) const;
     int inductorEqIndex(int indOrdinal) const;
 
+    /** 仅线性元件（R/V/I/C 开路/L 短路），用于初值与纯线性网表。 */
     bool assembleLinearSystem(const Circuit& circuit);
+
+    /** 线性 + 非线性伴随，Newton 每轮调用。 */
+    bool assembleSystem(const Circuit& circuit);
+
+    bool stampLinearPart(const Circuit& circuit);
+    bool stampNonlinearPart(const Circuit& circuit);
+
+    void stampNorton(const std::string& nPlus, const std::string& nMinus, double g, double ieq);
+
+    void stampDiode(const class Diode& diode, const Circuit& circuit);
+    void stampBjt(const class BJT& bjt, const Circuit& circuit);
+    void stampMosfet(const class MOSFET& mosfet, const Circuit& circuit);
+
+    bool circuitHasNonlinear(const Circuit& circuit) const;
+    bool obtainInitialGuess(const Circuit& circuit);
+    bool runNewton(const Circuit& circuit);
+    bool hasConverged(const std::vector<double>& prev,
+                      const std::vector<double>& curr) const;
+
+    /**
+     * @todo
+     * 各节点对地并联 gmin（收敛辅助）；在 obtainInitialGuess 或 runNewton 前调用。
+     */
+    void stampGminToGround(double gmin);
 
     bool stampResistor(const std::string& n1, const std::string& n2, double resistance);
 
@@ -55,4 +80,10 @@ private:
     int voltageSourceCount_ = 0;
     int inductorCount_ = 0;
     int systemSize_ = 0;
+
+    /** Newton 迭代参数（可在 obtainInitialGuess / runNewton 中使用）。 */
+    int newtonMaxIter_ = 50;
+    double newtonRelTol_ = 1e-6;
+    double newtonAbsTol_ = 1e-9;
+    double newtonDamping_ = 1.0;
 };

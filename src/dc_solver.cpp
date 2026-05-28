@@ -1,9 +1,13 @@
 #include "../include/dc_solver.h"
 
+#include "../elements/bjt.h"
 #include "../elements/currentSource.h"
+#include "../elements/diode.h"
 #include "../elements/inductor.h"
+#include "../elements/mosfet.h"
 #include "../elements/resistor.h"
 #include "../elements/voltageSource.h"
+#include "../include/device_eval.h"
 
 int DcSolver::countVoltageSources(const Circuit& circuit) const {
     int count = 0;
@@ -82,10 +86,10 @@ void DcSolver::stampCurrentSource(const std::string& nPlus, const std::string& n
     int i = nodeEqIndex(nPlus);
     int j = nodeEqIndex(nMinus);
 
-    if(i >=0){
+    if (i >= 0) {
         rhs[static_cast<std::size_t>(i)] -= current;
     }
-    if(j >=0){
+    if (j >= 0) {
         rhs[static_cast<std::size_t>(j)] += current;
     }
 }
@@ -122,10 +126,7 @@ void DcSolver::stampInductorShort(const std::string& nPlus, const std::string& n
     stampBranchVoltage(nPlus, nMinus, 0.0, inductorEqIndex(indEqIndex));
 }
 
-bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
-    jacobian.setZero();
-    std::fill(rhs.begin(), rhs.end(), 0.0);
-
+bool DcSolver::stampLinearPart(const Circuit& circuit) {
     int vsOrdinal = 0;
     int indOrdinal = 0;
     for (const auto& elem : circuit.getElements()) {
@@ -152,10 +153,8 @@ bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
                 break;
             }
             case ElementType::Capacitor:
-                // C 开路，对导纳矩阵不做贡献
                 break;
             case ElementType::Inductor: {
-                // L 短路，作为电压附加条件：等效于在两节点间接入0V电压源
                 const auto& inductor = static_cast<const Inductor&>(*elem);
                 const auto& nodes = inductor.getNodes();
                 stampInductorShort(nodes[0], nodes[1], indOrdinal);
@@ -165,10 +164,6 @@ bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
             case ElementType::Diode:
             case ElementType::BJT:
             case ElementType::MOSFET:
-                /**
-                 * @todo
-                 * Nonlinear devices: stamp equivalent conductance + current in Newton loop.
-                 */
                 break;
             default:
                 break;
@@ -176,6 +171,142 @@ bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
     }
 
     return true;
+}
+
+bool DcSolver::stampNonlinearPart(const Circuit& circuit) {
+    (void)circuit;
+
+    /**
+     * @todo
+     * 遍历 D/Q/M 元件，用 nodeVoltage() 取端口电压，调用 eval* 与 stampDiode/stampBjt/stampMosfet。
+     * vsOrdinal / indOrdinal 仅由 stampLinearPart 维护，此处勿重复 stamp 线性支路。
+     */
+    return true;
+}
+
+bool DcSolver::assembleLinearSystem(const Circuit& circuit) {
+    jacobian.setZero();
+    std::fill(rhs.begin(), rhs.end(), 0.0);
+    return stampLinearPart(circuit);
+}
+
+bool DcSolver::assembleSystem(const Circuit& circuit) {
+    jacobian.setZero();
+    std::fill(rhs.begin(), rhs.end(), 0.0);
+
+    if (!stampLinearPart(circuit)) {
+        return false;
+    }
+
+    return stampNonlinearPart(circuit);
+}
+
+void DcSolver::stampNorton(const std::string& nPlus, const std::string& nMinus, double g,
+                           double ieq) {
+    (void)nPlus;
+    (void)nMinus;
+    (void)g;
+    (void)ieq;
+
+    /**
+     * @todo
+     * 电导 g：与 stampResistor 相同拓扑（电导=g，电阻=1/g）；
+     * 等效电流 ieq：stampCurrentSource(nPlus, nMinus, ieq)。
+     */
+}
+
+void DcSolver::stampDiode(const Diode& diode, const Circuit& circuit) {
+    (void)diode;
+    (void)circuit;
+
+    /**
+     * @todo
+     * Vd = nodeVoltage(anode) - nodeVoltage(cathode)；
+     * params = circuit.models().get(diode.getModel()).diode()；
+     * stampNorton(anode, cathode, evalDiode(Vd, params));
+     */
+}
+
+void DcSolver::stampBjt(const BJT& bjt, const Circuit& circuit) {
+    (void)bjt;
+    (void)circuit;
+
+    /**
+     * @todo
+     * 由 model 类型选 evalBjtNpn / evalBjtPnp，stamp C-B-E（及可选 substrate）伴随矩阵。
+     */
+}
+
+void DcSolver::stampMosfet(const MOSFET& mosfet, const Circuit& circuit) {
+    (void)mosfet;
+    (void)circuit;
+
+    /**
+     * @todo
+     * Vgs/Vds/Vbs 由四端节点电压得到，evalMosNmos / evalMosPmos，stamp D-G-S 伴随。
+     */
+}
+
+bool DcSolver::circuitHasNonlinear(const Circuit& circuit) const {
+    for (const auto& elem : circuit.getElements()) {
+        switch (elem->getType()) {
+            case ElementType::Diode:
+            case ElementType::BJT:
+            case ElementType::MOSFET:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
+}
+
+bool DcSolver::obtainInitialGuess(const Circuit& circuit) {
+    (void)circuit;
+
+    /**
+     * @todo
+     * 1. assembleLinearSystem(circuit) 或 stampLinearPart + solve；
+     * 2. 将解写入 solution 作为 Newton 初值；
+     * 3. 可选：stampGminToGround 分档步进后再解。
+     */
+    return false;
+}
+
+bool DcSolver::runNewton(const Circuit& circuit) {
+    (void)circuit;
+
+    /**
+     * @todo
+     * for (iter < newtonMaxIter_):
+     *   assembleSystem(circuit);
+     *   jacobian.solveInPlace(solution, rhs);  // 原地 LU，无整表拷贝
+     *   if (hasConverged(prev, solution)) return true;
+     * 失败时 cerr 报告未收敛。
+     */
+    return false;
+}
+
+bool DcSolver::hasConverged(const std::vector<double>& prev,
+                            const std::vector<double>& curr) const {
+    (void)prev;
+    (void)curr;
+
+    /**
+     * @todo
+     * max_i |curr[i]-prev[i]| < newtonAbsTol_ + newtonRelTol_*max(|curr[i]|, 1)
+     */
+    return false;
+}
+
+void DcSolver::stampGminToGround(double gmin) {
+    (void)gmin;
+
+    /**
+     * @todo
+     * for i in 0 .. nodeMap.nodeCount()-1:
+     *   jacobian.add(i, i, gmin)
+     */
 }
 
 double DcSolver::nodeVoltage(const std::string& node) const {
@@ -216,7 +347,7 @@ bool DcSolver::printOpResults(const Circuit& circuit, std::ostream& os) const {
 }
 
 bool DcSolver::solve(Circuit& circuit, std::ostream& os) {
-    if(!hasReferenceGround(circuit)){
+    if (!hasReferenceGround(circuit)) {
         std::cerr << "No reference node(0 or GND) in the Netlist" << std::endl;
         return false;
     }
@@ -225,33 +356,45 @@ bool DcSolver::solve(Circuit& circuit, std::ostream& os) {
         return false;
     }
 
-    if (!assembleLinearSystem(circuit)) {
-        return false;
+    if (!circuitHasNonlinear(circuit)) {
+        if (!assembleLinearSystem(circuit)) {
+            return false;
+        }
+        if (!jacobian.solveInPlace(solution, rhs)) {
+            return false;
+        }
+        return printOpResults(circuit, os);
     }
 
     /**
      * @todo
-     * Linear DC: one-shot solve. Nonlinear: Newton loop with re-assemble each iteration.
+     * 非线性 DC：初值 + Newton。obtainInitialGuess / runNewton 实现后以下路径生效。
      */
-    if (!jacobian.solve(solution, rhs)) {
+    if (!obtainInitialGuess(circuit)) {
+        std::cerr << "Failed to obtain initial guess for nonlinear DC analysis" << std::endl;
+        return false;
+    }
+
+    if (!runNewton(circuit)) {
+        std::cerr << "Newton iteration did not converge" << std::endl;
         return false;
     }
 
     return printOpResults(circuit, os);
 }
 
-bool DcSolver::isGroundNode(const std::string& node){
-    if(node == "0" || node == "GND"){
+bool DcSolver::isGroundNode(const std::string& node) {
+    if (node == "0" || node == "GND") {
         return true;
     }
 
     return false;
 }
 
-bool DcSolver::hasReferenceGround(Circuit& circuit){
-    for(auto& element: circuit.getElements()){
-        for(auto& node: element->getNodes()){
-            if(isGroundNode(node)){
+bool DcSolver::hasReferenceGround(Circuit& circuit) {
+    for (auto& element : circuit.getElements()) {
+        for (auto& node : element->getNodes()) {
+            if (isGroundNode(node)) {
                 return true;
             }
         }
